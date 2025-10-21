@@ -31,6 +31,7 @@
             border-radius: 20px;
             padding: 30px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
         }
 
         h1 {
@@ -43,7 +44,7 @@
 
         .creator-section {
             display: grid;
-            grid-template-columns: 300px 1fr;
+            grid-template-columns: minmax(300px, 350px) 1fr;
             gap: 30px;
             margin-bottom: 30px;
         }
@@ -53,6 +54,8 @@
             padding: 25px;
             border-radius: 15px;
             border: 2px solid #e9ecef;
+            max-height: 600px;
+            overflow-y: auto;
         }
 
         .control-group {
@@ -80,6 +83,7 @@
             text-align: center;
             transition: all 0.3s;
             font-family: 'Cormorant Garamond', serif;
+            font-size: 14px;
         }
 
         .orientation-btn.active {
@@ -106,9 +110,13 @@
             transition: all 0.3s;
         }
 
+        .background-item:hover, .sticker-item:hover {
+            border-color: #d40000;
+        }
+
         .background-item.active, .sticker-item.active {
             border-color: #d40000;
-            transform: scale(0.95);
+            background-color: #fff5f5;
         }
 
         .text-input {
@@ -131,6 +139,7 @@
             justify-content: center;
             align-items: center;
             position: relative;
+            min-height: 500px;
         }
 
         #cardCanvas {
@@ -139,29 +148,35 @@
             border: 2px dashed #dee2e6;
             border-radius: 10px;
             background: white;
-            cursor: crosshair;
+            cursor: grab;
+            touch-action: none;
+        }
+
+        #cardCanvas.dragging {
+            cursor: grabbing;
         }
 
         .sticker-controls {
             position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.95);
             padding: 10px;
             border-radius: 8px;
-            border: 1px solid #dee2e6;
+            border: 2px solid #d40000;
             display: none;
+            z-index: 100;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            font-size: 12px;
         }
 
         .size-control {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 10px;
+            gap: 8px;
+            margin-bottom: 8px;
         }
 
         .size-slider {
-            width: 100px;
+            width: 80px;
         }
 
         .actions {
@@ -171,7 +186,7 @@
         }
 
         .btn {
-            padding: 15px 30px;
+            padding: 12px 25px;
             border: none;
             border-radius: 10px;
             font-size: 16px;
@@ -204,6 +219,13 @@
             transform: translateY(-2px);
         }
 
+        .instructions {
+            text-align: center;
+            color: #666;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
         /* Адаптивность */
         @media (max-width: 768px) {
             .creator-section {
@@ -212,14 +234,21 @@
             
             .controls {
                 order: 2;
+                max-height: 400px;
             }
             
             .preview-section {
                 order: 1;
+                min-height: 400px;
             }
             
             h1 {
                 font-size: 2em;
+            }
+            
+            .orientation-btn {
+                font-size: 12px;
+                padding: 10px;
             }
         }
     </style>
@@ -267,13 +296,17 @@
                 <div class="sticker-controls" id="stickerControls">
                     <div class="size-control">
                         <span>Размер:</span>
-                        <input type="range" class="size-slider" id="sizeSlider" min="50" max="200" value="100">
+                        <input type="range" class="size-slider" id="sizeSlider" min="30" max="200" value="100">
                     </div>
                     <button class="btn btn-clear" onclick="deleteSelectedSticker()" style="padding: 5px 10px; font-size: 12px;">
                         Удалить
                     </button>
                 </div>
             </div>
+        </div>
+
+        <div class="instructions">
+            💡 Для изменения размера стикера: зажмите Shift и крутите колесико мыши или используйте два пальца на сенсорном экране
         </div>
 
         <div class="actions">
@@ -307,14 +340,17 @@
         let state = {
             orientation: 'vertical',
             selectedBackground: null,
-            stickers: [], // Массив объектов стикеров
+            stickers: [],
             greetingText: '',
             selectedSticker: null,
-            logo: new Image()
+            logo: new Image(),
+            isDragging: false,
+            dragOffset: { x: 0, y: 0 },
+            initialDistance: null
         };
 
         // Загружаем логотип
-        state.logo.src = 'logo3.png';
+        state.logo.src = 'logo.png';
 
         // Элементы DOM
         const canvas = document.getElementById('cardCanvas');
@@ -324,6 +360,9 @@
         const greetingTextInput = document.getElementById('greetingText');
         const stickerControls = document.getElementById('stickerControls');
         const sizeSlider = document.getElementById('sizeSlider');
+
+        // Кэш изображений
+        const imageCache = new Map();
 
         // Инициализация
         function init() {
@@ -350,7 +389,14 @@
                 bgItem.style.backgroundImage = `url(${bg})`;
                 bgItem.dataset.background = bg;
                 bgItem.addEventListener('click', () => selectBackground(bg));
+                
+                if (index === 0) {
+                    bgItem.classList.add('active');
+                    state.selectedBackground = bg;
+                }
+                
                 backgroundsGrid.appendChild(bgItem);
+                preloadImage(bg);
             });
         }
 
@@ -363,7 +409,17 @@
                 stickerItem.dataset.sticker = sticker;
                 stickerItem.addEventListener('click', () => addSticker(sticker));
                 stickersGrid.appendChild(stickerItem);
+                
+                preloadImage(sticker);
             });
+        }
+
+        function preloadImage(src) {
+            if (!imageCache.has(src)) {
+                const img = new Image();
+                img.onload = () => imageCache.set(src, img);
+                img.src = src;
+            }
         }
 
         function setupEventListeners() {
@@ -384,24 +440,155 @@
                 renderCard();
             });
 
-            // Клик по канвасу для выбора стикера
-            canvas.addEventListener('click', (e) => {
-                const rect = canvas.getBoundingClientRect();
-                const scaleX = canvas.width / rect.width;
-                const scaleY = canvas.height / rect.height;
-                const x = (e.clientX - rect.left) * scaleX;
-                const y = (e.clientY - rect.top) * scaleY;
-                
-                selectStickerAt(x, y);
-            });
+            // Перетаскивание стикеров
+            canvas.addEventListener('mousedown', startDrag);
+            canvas.addEventListener('mousemove', drag);
+            canvas.addEventListener('mouseup', endDrag);
+            canvas.addEventListener('mouseleave', endDrag);
 
-            // Изменение размера стикера
+            // Изменение размера колесиком мыши
+            canvas.addEventListener('wheel', handleWheel, { passive: false });
+
+            // Touch события для масштабирования
+            canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+            canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+            canvas.addEventListener('touchend', handleTouchEnd);
+
+            // Изменение размера через слайдер
             sizeSlider.addEventListener('input', (e) => {
                 if (state.selectedSticker !== null) {
                     state.stickers[state.selectedSticker].size = parseInt(e.target.value);
                     renderCard();
                 }
             });
+        }
+
+        function getCanvasCoordinates(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            return {
+                x: (e.clientX - rect.left) * scaleX,
+                y: (e.clientY - rect.top) * scaleY
+            };
+        }
+
+        function startDrag(e) {
+            const coords = getCanvasCoordinates(e);
+            selectStickerAt(coords.x, coords.y);
+            
+            if (state.selectedSticker !== null) {
+                state.isDragging = true;
+                const sticker = state.stickers[state.selectedSticker];
+                state.dragOffset.x = coords.x - sticker.x;
+                state.dragOffset.y = coords.y - sticker.y;
+                canvas.classList.add('dragging');
+            }
+        }
+
+        function drag(e) {
+            if (!state.isDragging || state.selectedSticker === null) return;
+            
+            const coords = getCanvasCoordinates(e);
+            const sticker = state.stickers[state.selectedSticker];
+            
+            sticker.x = coords.x - state.dragOffset.x;
+            sticker.y = coords.y - state.dragOffset.y;
+            
+            // Ограничиваем движение в пределах канваса
+            const halfSize = sticker.size / 2;
+            sticker.x = Math.max(halfSize, Math.min(canvas.width - halfSize, sticker.x));
+            sticker.y = Math.max(halfSize, Math.min(canvas.height - halfSize, sticker.y));
+            
+            updateStickerControlsPosition(sticker);
+            renderCard();
+        }
+
+        function endDrag() {
+            state.isDragging = false;
+            canvas.classList.remove('dragging');
+        }
+
+        function handleWheel(e) {
+            if (state.selectedSticker !== null && e.shiftKey) {
+                e.preventDefault();
+                const sticker = state.stickers[state.selectedSticker];
+                const delta = -Math.sign(e.deltaY) * 5; // 5px за шаг
+                sticker.size = Math.max(30, Math.min(200, sticker.size + delta));
+                sizeSlider.value = sticker.size;
+                renderCard();
+            }
+        }
+
+        function handleTouchStart(e) {
+            if (e.touches.length === 1) {
+                // Одно касание - перетаскивание
+                const touch = e.touches[0];
+                const mouseEvent = new MouseEvent('mousedown', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+                canvas.dispatchEvent(mouseEvent);
+            } else if (e.touches.length === 2 && state.selectedSticker !== null) {
+                // Два касания - масштабирование
+                e.preventDefault();
+                state.initialDistance = getTouchDistance(e.touches[0], e.touches[1]);
+            }
+        }
+
+        function handleTouchMove(e) {
+            if (e.touches.length === 1 && state.isDragging) {
+                // Перетаскивание
+                const touch = e.touches[0];
+                const mouseEvent = new MouseEvent('mousemove', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+                canvas.dispatchEvent(mouseEvent);
+            } else if (e.touches.length === 2 && state.selectedSticker !== null) {
+                // Масштабирование
+                e.preventDefault();
+                const currentDistance = getTouchDistance(e.touches[0], e.touches[1]);
+                const scale = currentDistance / state.initialDistance;
+                
+                const sticker = state.stickers[state.selectedSticker];
+                sticker.size = Math.max(30, Math.min(200, sticker.size * scale));
+                sizeSlider.value = sticker.size;
+                
+                state.initialDistance = currentDistance;
+                renderCard();
+            }
+        }
+
+        function handleTouchEnd(e) {
+            if (e.touches.length === 0) {
+                endDrag();
+            }
+        }
+
+        function getTouchDistance(touch1, touch2) {
+            const dx = touch1.clientX - touch2.clientX;
+            const dy = touch1.clientY - touch2.clientY;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        function updateStickerControlsPosition(sticker) {
+            const halfSize = sticker.size / 2;
+            const controlsWidth = 120;
+            const controlsHeight = 60;
+            
+            let left = sticker.x - halfSize;
+            let top = sticker.y - halfSize - controlsHeight - 10;
+            
+            // Проверяем границы
+            if (top < 10) top = sticker.y + halfSize + 10;
+            if (left + controlsWidth > canvas.width) left = canvas.width - controlsWidth - 10;
+            if (left < 10) left = 10;
+            if (top + controlsHeight > canvas.height) top = canvas.height - controlsHeight - 10;
+            
+            stickerControls.style.display = 'block';
+            stickerControls.style.left = left + 'px';
+            stickerControls.style.top = top + 'px';
         }
 
         function selectBackground(background) {
@@ -421,14 +608,13 @@
                 x: canvas.width / 2,
                 y: canvas.height / 2,
                 size: 100,
-                id: Date.now() + Math.random() // Уникальный ID
+                id: Date.now() + Math.random()
             };
             state.stickers.push(sticker);
             renderCard();
         }
 
         function selectStickerAt(x, y) {
-            // Ищем стикер по координатам (проверяем попадание в квадрат)
             for (let i = state.stickers.length - 1; i >= 0; i--) {
                 const sticker = state.stickers[i];
                 const halfSize = sticker.size / 2;
@@ -438,15 +624,12 @@
                     
                     state.selectedSticker = i;
                     sizeSlider.value = sticker.size;
-                    stickerControls.style.display = 'block';
-                    stickerControls.style.left = (sticker.x - halfSize) + 'px';
-                    stickerControls.style.top = (sticker.y - halfSize - 60) + 'px';
+                    updateStickerControlsPosition(sticker);
                     renderCard();
                     return;
                 }
             }
             
-            // Если кликнули мимо стикера
             state.selectedSticker = null;
             stickerControls.style.display = 'none';
             renderCard();
@@ -464,24 +647,21 @@
         function renderCard() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Фон (без растягивания - сохраняем пропорции)
+            // Фон
             if (state.selectedBackground) {
-                const bgImg = new Image();
-                bgImg.onload = () => {
-                    // Рассчитываем размеры для сохранения пропорций
+                const bgImg = imageCache.get(state.selectedBackground);
+                if (bgImg && bgImg.complete) {
                     const imgRatio = bgImg.width / bgImg.height;
                     const canvasRatio = canvas.width / canvas.height;
                     
                     let drawWidth, drawHeight, offsetX, offsetY;
                     
                     if (imgRatio > canvasRatio) {
-                        // Широкая картинка
                         drawHeight = canvas.height;
                         drawWidth = bgImg.width * (canvas.height / bgImg.height);
                         offsetX = (canvas.width - drawWidth) / 2;
                         offsetY = 0;
                     } else {
-                        // Высокая картинка
                         drawWidth = canvas.width;
                         drawHeight = bgImg.height * (canvas.width / bgImg.width);
                         offsetX = 0;
@@ -489,21 +669,16 @@
                     }
                     
                     ctx.drawImage(bgImg, offsetX, offsetY, drawWidth, drawHeight);
-                    renderContent();
-                };
-                bgImg.src = state.selectedBackground;
+                }
             } else {
                 ctx.fillStyle = '#ffffff';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
-                renderContent();
             }
-        }
 
-        function renderContent() {
             // Стикеры
             state.stickers.forEach((sticker, index) => {
-                const img = new Image();
-                img.onload = () => {
+                const img = imageCache.get(sticker.src);
+                if (img && img.complete) {
                     const halfSize = sticker.size / 2;
                     ctx.drawImage(img, sticker.x - halfSize, sticker.y - halfSize, sticker.size, sticker.size);
                     
@@ -511,24 +686,21 @@
                     if (index === state.selectedSticker) {
                         ctx.strokeStyle = '#d40000';
                         ctx.lineWidth = 2;
+                        ctx.setLineDash([5, 5]);
                         ctx.strokeRect(sticker.x - halfSize, sticker.y - halfSize, sticker.size, sticker.size);
+                        ctx.setLineDash([]);
                     }
-                };
-                img.src = sticker.src;
+                }
             });
 
-            // Текст с морозным эффектом
+            // Текст
             if (state.greetingText) {
-                ctx.fillStyle = '#ffffff'; // Белый цвет
+                ctx.fillStyle = '#ffffff';
                 ctx.font = 'bold 24px "Cormorant Garamond"';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                
-                // Морозный эффект
                 ctx.shadowColor = '#87CEEB';
-                ctx.shadowBlur = 10;
-                ctx.shadowOffsetX = 0;
-                ctx.shadowOffsetY = 0;
+                ctx.shadowBlur = 15;
                 
                 const lines = wrapText(ctx, state.greetingText, canvas.width * 0.8);
                 const lineHeight = 30;
@@ -538,12 +710,12 @@
                     ctx.fillText(line, canvas.width / 2, startY + index * lineHeight);
                 });
                 
-                ctx.shadowBlur = 0; // Сбрасываем тень
+                ctx.shadowBlur = 0;
             }
 
-            // Логотип (без растягивания)
+            // Логотип
             if (state.logo.complete && state.logo.naturalHeight !== 0) {
-                const logoSize = 60; // Фиксированный размер
+                const logoSize = 60;
                 const padding = 10;
                 ctx.drawImage(state.logo, canvas.width - logoSize - padding, padding, logoSize, logoSize);
             }
@@ -587,6 +759,13 @@
                 item.classList.remove('active');
             });
             
+            // Выбираем первый фон по умолчанию
+            const firstBg = document.querySelector('.background-item');
+            if (firstBg) {
+                firstBg.classList.add('active');
+                state.selectedBackground = firstBg.dataset.background;
+            }
+            
             renderCard();
         }
 
@@ -595,4 +774,3 @@
     </script>
 </body>
 </html>
-
