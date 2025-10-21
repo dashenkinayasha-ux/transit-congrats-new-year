@@ -145,11 +145,12 @@
             user-select: none;
             z-index: 5;
             white-space: pre-line;
-            max-width: 80%;
             resize: both;
             overflow: hidden;
             min-width: 100px;
             min-height: 50px;
+            background: rgba(1, 77, 119, 0.3);
+            border-radius: 8px;
         }
 
         .sticker {
@@ -307,13 +308,14 @@
 
         .resize-handle {
             position: absolute;
-            width: 10px;
-            height: 10px;
+            width: 12px;
+            height: 12px;
             background: var(--accent-color);
             border-radius: 50%;
-            bottom: 0;
-            right: 0;
+            bottom: 2px;
+            right: 2px;
             cursor: nwse-resize;
+            z-index: 10;
         }
 
         @media (max-width: 768px) {
@@ -356,7 +358,7 @@
 
                     <div class="control-group">
                         <label for="greeting-text">Текст поздравления</label>
-                        <textarea id="greeting-text" placeholder="Введите ваш текст поздравления..."></textarea>
+                        <textarea id="greeting-text" placeholder="Введите ваш текст поздравления...">С Новым Годом!</textarea>
                     </div>
 
                     <div class="control-group">
@@ -391,8 +393,7 @@
             <div class="preview-container">
                 <div class="card-preview card-vertical">
                     <div class="card-background" id="card-bg">
-                        <img src="./images/logo3.png" alt="Логотип" class="card-logo" id="card-logo">
-                        <!-- Текст будет добавлен динамически -->
+                        <!-- Логотип и текст будут добавлены динамически -->
                     </div>
                 </div>
             </div>
@@ -408,7 +409,6 @@
             const greetingText = document.getElementById('greeting-text');
             const cardPreview = document.querySelector('.card-preview');
             const cardBg = document.getElementById('card-bg');
-            const cardLogo = document.getElementById('card-logo');
             const textAlignBtns = document.querySelectorAll('.text-align-btn');
             const fontBtns = document.querySelectorAll('.font-btn');
             const stickerGallery = document.getElementById('sticker-gallery');
@@ -416,6 +416,7 @@
             const snowflakesContainer = document.getElementById('snowflakes');
             
             let currentTextElement = null;
+            let currentLogo = null;
             
             // Создание снежинок
             function createSnowflakes() {
@@ -437,7 +438,13 @@
             function loadBackgrounds() {
                 const backgrounds = [
                     { id: 'bg1', name: 'Зимний пейзаж 1', url: './backgrounds/bg1.png' },
-                    { id: 'bg2', name: 'Зимний пейзаж 2', url: './backgrounds/bg2.png' }
+                    { id: 'bg2', name: 'Зимний пейзаж 2', url: './backgrounds/bg2.png' },
+                    { id: 'bg3', name: 'Новогодний город', url: './backgrounds/bg3.png' },
+                    { id: 'bg4', name: 'Ёлка с шарами', url: './backgrounds/bg4.png' },
+                    { id: 'bg5', name: 'Снежный лес', url: './backgrounds/bg5.png' },
+                    { id: 'bg6', name: 'Праздничный декор', url: './backgrounds/bg6.png' },
+                    { id: 'bg7', name: 'Зимний вечер', url: './backgrounds/bg7.png' },
+                    { id: 'bg8', name: 'Новогоднее настроение', url: './backgrounds/bg8.png' }
                 ];
                 
                 backgrounds.forEach(bg => {
@@ -458,7 +465,13 @@
             function loadStickers() {
                 const stickers = [
                     { id: 'sticker1', name: 'Стикер 1', url: './stickers/sticker1.png' },
-                    { id: 'sticker2', name: 'Стикер 2', url: './stickers/sticker2.png' }
+                    { id: 'sticker2', name: 'Стикер 2', url: './stickers/sticker2.png' },
+                    { id: 'sticker3', name: 'Стикер 3', url: './stickers/sticker3.png' },
+                    { id: 'sticker4', name: 'Стикер 4', url: './stickers/sticker4.png' },
+                    { id: 'sticker5', name: 'Стикер 5', url: './stickers/sticker5.png' },
+                    { id: 'sticker6', name: 'Стикер 6', url: './stickers/sticker6.png' },
+                    { id: 'sticker7', name: 'Стикер 7', url: './stickers/sticker7.png' },
+                    { id: 'sticker8', name: 'Стикер 8', url: './stickers/sticker8.png' }
                 ];
                 
                 stickers.forEach(sticker => {
@@ -474,11 +487,37 @@
                     img.alt = sticker.name;
                     img.onerror = function() {
                         console.error('Ошибка загрузки стикера:', sticker.url);
+                        // Запасной вариант если стикер не загрузился
+                        stickerOption.innerHTML = '🎄';
+                        stickerOption.style.display = 'flex';
+                        stickerOption.style.alignItems = 'center';
+                        stickerOption.style.justifyContent = 'center';
+                        stickerOption.style.fontSize = '24px';
                     };
                     stickerOption.appendChild(img);
                     
                     stickerGallery.appendChild(stickerOption);
                 });
+            }
+            
+            // Загрузка логотипа
+            function loadLogo() {
+                if (currentLogo) {
+                    currentLogo.remove();
+                }
+                
+                const logo = document.createElement('img');
+                logo.className = 'card-logo';
+                logo.src = './images/logo3.png';
+                logo.alt = 'Логотип';
+                logo.onerror = function() {
+                    console.error('Ошибка загрузки логотипа');
+                    // Создаем заглушку для логотипа
+                    logo.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="60" viewBox="0 0 120 60"><rect width="120" height="60" fill="%23014d77" rx="10"/><text x="60" y="35" font-family="Arial" font-size="14" fill="white" text-anchor="middle">ЛОГОТИП</text></svg>';
+                };
+                
+                cardBg.appendChild(logo);
+                currentLogo = logo;
             }
             
             // Создание текстового элемента
@@ -489,7 +528,7 @@
                 
                 const textElement = document.createElement('div');
                 textElement.className = 'card-text';
-                textElement.textContent = greetingText.value || 'С Новым Годом!';
+                textElement.textContent = greetingText.value;
                 textElement.style.fontFamily = 'Marck Script, cursive';
                 textElement.style.textAlign = 'center';
                 
@@ -511,6 +550,7 @@
             createSnowflakes();
             loadBackgrounds();
             loadStickers();
+            loadLogo();
             createTextElement();
             updateCardOrientation();
             
@@ -557,12 +597,14 @@
             
             function updateBackground() {
                 const selectedOption = backgroundSelect.options[backgroundSelect.selectedIndex];
-                cardBg.style.backgroundImage = `url(${selectedOption.dataset.url})`;
+                if (selectedOption && selectedOption.dataset.url) {
+                    cardBg.style.backgroundImage = `url(${selectedOption.dataset.url})`;
+                }
             }
             
             function updateGreetingText() {
                 if (currentTextElement) {
-                    currentTextElement.textContent = greetingText.value || 'С Новым Годом!';
+                    currentTextElement.textContent = greetingText.value;
                 }
             }
             
@@ -598,6 +640,14 @@
                 img.alt = 'Стикер';
                 img.onerror = function() {
                     console.error('Ошибка загрузки стикера:', stickerUrl);
+                    // Запасной вариант если стикер не загрузился
+                    sticker.innerHTML = '🎁';
+                    sticker.style.display = 'flex';
+                    sticker.style.alignItems = 'center';
+                    sticker.style.justifyContent = 'center';
+                    sticker.style.fontSize = '32px';
+                    sticker.style.backgroundColor = 'rgba(255,255,255,0.8)';
+                    sticker.style.borderRadius = '10px';
                 };
                 sticker.appendChild(img);
                 
@@ -620,32 +670,43 @@
             
             function makeDraggable(element) {
                 let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+                let isResizing = false;
                 
-                element.onmousedown = dragMouseDown;
-                element.ontouchstart = dragTouchStart;
+                element.addEventListener('mousedown', dragMouseDown);
+                element.addEventListener('touchstart', dragTouchStart);
                 
                 function dragMouseDown(e) {
-                    if (e.target.classList.contains('resize-handle')) return;
+                    if (e.target.classList.contains('resize-handle')) {
+                        isResizing = true;
+                        return;
+                    }
+                    isResizing = false;
                     
                     e.preventDefault();
                     pos3 = e.clientX;
                     pos4 = e.clientY;
-                    document.onmouseup = closeDragElement;
-                    document.onmousemove = elementDrag;
+                    document.addEventListener('mouseup', closeDragElement);
+                    document.addEventListener('mousemove', elementDrag);
                 }
                 
                 function dragTouchStart(e) {
-                    if (e.target.classList.contains('resize-handle')) return;
+                    if (e.target.classList.contains('resize-handle')) {
+                        isResizing = true;
+                        return;
+                    }
+                    isResizing = false;
                     
                     e.preventDefault();
                     const touch = e.touches[0];
                     pos3 = touch.clientX;
                     pos4 = touch.clientY;
-                    document.ontouchend = closeDragElement;
-                    document.ontouchmove = elementDragTouch;
+                    document.addEventListener('touchend', closeDragElement);
+                    document.addEventListener('touchmove', elementDragTouch);
                 }
                 
                 function elementDrag(e) {
+                    if (isResizing) return;
+                    
                     e.preventDefault();
                     pos1 = pos3 - e.clientX;
                     pos2 = pos4 - e.clientY;
@@ -658,6 +719,8 @@
                 }
                 
                 function elementDragTouch(e) {
+                    if (isResizing) return;
+                    
                     e.preventDefault();
                     const touch = e.touches[0];
                     pos1 = pos3 - touch.clientX;
@@ -671,10 +734,10 @@
                 }
                 
                 function closeDragElement() {
-                    document.onmouseup = null;
-                    document.onmousemove = null;
-                    document.ontouchend = null;
-                    document.ontouchmove = null;
+                    document.removeEventListener('mouseup', closeDragElement);
+                    document.removeEventListener('mousemove', elementDrag);
+                    document.removeEventListener('touchend', closeDragElement);
+                    document.removeEventListener('touchmove', elementDragTouch);
                 }
             }
             
@@ -717,6 +780,13 @@
                     if (width > 40 && height > 40) {
                         element.style.width = width + 'px';
                         element.style.height = height + 'px';
+                        
+                        // Для текста также меняем размер шрифта
+                        if (element.classList.contains('card-text')) {
+                            const baseSize = 1.5; // rem
+                            const scale = Math.min(width / 200, height / 100);
+                            element.style.fontSize = (baseSize * scale) + 'rem';
+                        }
                     }
                 }
                 
@@ -727,6 +797,13 @@
                     if (width > 40 && height > 40) {
                         element.style.width = width + 'px';
                         element.style.height = height + 'px';
+                        
+                        // Для текста также меняем размер шрифта
+                        if (element.classList.contains('card-text')) {
+                            const baseSize = 1.5; // rem
+                            const scale = Math.min(width / 200, height / 100);
+                            element.style.fontSize = (baseSize * scale) + 'rem';
+                        }
                     }
                 }
                 
