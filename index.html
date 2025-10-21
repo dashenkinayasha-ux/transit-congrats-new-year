@@ -28,7 +28,6 @@
             position: relative;
         }
 
-        /* Анимация снега */
         .snowflakes {
             position: fixed;
             top: 0;
@@ -227,9 +226,6 @@
             border-radius: 8px;
             cursor: pointer;
             transition: transform 0.3s ease;
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
             border: 2px solid transparent;
             background-color: white;
             padding: 5px;
@@ -403,6 +399,19 @@
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Данные согласно вашему формату
+            const appData = {
+                backgrounds: [
+                    'bg1.jpg', 'bg2.jpg', 'bg3.jpg', 'bg4.jpg',
+                    'bg5.jpg', 'bg6.jpg', 'bg7.jpg', 'bg8.jpg'
+                ],
+                stickers: [
+                    'sticker1.png', 'sticker2.png', 'sticker3.png', 'sticker4.png',
+                    'sticker5.png', 'sticker6.png', 'sticker7.png', 'sticker8.png'
+                ],
+                logo: 'logo3.png'
+            };
+
             // Элементы DOM
             const orientationSelect = document.getElementById('orientation');
             const backgroundSelect = document.getElementById('background');
@@ -436,58 +445,34 @@
             
             // Загрузка фонов
             function loadBackgrounds() {
-                const backgrounds = [
-                    { id: 'bg1', name: 'Зимний пейзаж 1', url: './backgrounds/bg1.png' },
-                    { id: 'bg2', name: 'Зимний пейзаж 2', url: './backgrounds/bg2.png' },
-                    { id: 'bg3', name: 'Новогодний город', url: './backgrounds/bg3.png' },
-                    { id: 'bg4', name: 'Ёлка с шарами', url: './backgrounds/bg4.png' },
-                    { id: 'bg5', name: 'Снежный лес', url: './backgrounds/bg5.png' },
-                    { id: 'bg6', name: 'Праздничный декор', url: './backgrounds/bg6.png' },
-                    { id: 'bg7', name: 'Зимний вечер', url: './backgrounds/bg7.png' },
-                    { id: 'bg8', name: 'Новогоднее настроение', url: './backgrounds/bg8.png' }
-                ];
-                
-                backgrounds.forEach(bg => {
+                appData.backgrounds.forEach((bg, index) => {
                     const option = document.createElement('option');
-                    option.value = bg.id;
-                    option.textContent = bg.name;
-                    option.dataset.url = bg.url;
+                    option.value = `bg${index + 1}`;
+                    option.textContent = `Фон ${index + 1}`;
+                    option.dataset.url = `./backgrounds/${bg}`;
                     backgroundSelect.appendChild(option);
                 });
                 
                 // Устанавливаем первый фон по умолчанию
-                if (backgrounds.length > 0) {
-                    cardBg.style.backgroundImage = `url(${backgrounds[0].url})`;
+                if (appData.backgrounds.length > 0) {
+                    cardBg.style.backgroundImage = `url(./backgrounds/${appData.backgrounds[0]})`;
                 }
             }
             
             // Загрузка стикеров
             function loadStickers() {
-                const stickers = [
-                    { id: 'sticker1', name: 'Стикер 1', url: './stickers/sticker1.png' },
-                    { id: 'sticker2', name: 'Стикер 2', url: './stickers/sticker2.png' },
-                    { id: 'sticker3', name: 'Стикер 3', url: './stickers/sticker3.png' },
-                    { id: 'sticker4', name: 'Стикер 4', url: './stickers/sticker4.png' },
-                    { id: 'sticker5', name: 'Стикер 5', url: './stickers/sticker5.png' },
-                    { id: 'sticker6', name: 'Стикер 6', url: './stickers/sticker6.png' },
-                    { id: 'sticker7', name: 'Стикер 7', url: './stickers/sticker7.png' },
-                    { id: 'sticker8', name: 'Стикер 8', url: './stickers/sticker8.png' }
-                ];
-                
-                stickers.forEach(sticker => {
+                appData.stickers.forEach((sticker, index) => {
                     const stickerOption = document.createElement('div');
                     stickerOption.classList.add('sticker-option');
-                    stickerOption.dataset.sticker = sticker.id;
-                    stickerOption.dataset.url = sticker.url;
-                    stickerOption.title = sticker.name;
+                    stickerOption.dataset.sticker = `sticker${index + 1}`;
+                    stickerOption.dataset.url = `./stickers/${sticker}`;
+                    stickerOption.title = `Стикер ${index + 1}`;
                     
-                    // Создаем изображение для предпросмотра стикера
                     const img = document.createElement('img');
-                    img.src = sticker.url;
-                    img.alt = sticker.name;
+                    img.src = `./stickers/${sticker}`;
+                    img.alt = `Стикер ${index + 1}`;
                     img.onerror = function() {
-                        console.error('Ошибка загрузки стикера:', sticker.url);
-                        // Запасной вариант если стикер не загрузился
+                        console.error('Ошибка загрузки стикера:', sticker);
                         stickerOption.innerHTML = '🎄';
                         stickerOption.style.display = 'flex';
                         stickerOption.style.alignItems = 'center';
@@ -502,16 +487,12 @@
             
             // Загрузка логотипа
             function loadLogo() {
-                if (currentLogo) {
-                    currentLogo.remove();
-                }
-                
                 const logo = document.createElement('img');
                 logo.className = 'card-logo';
-                logo.src = './images/logo3.png';
+                logo.src = `./images/${appData.logo}`;
                 logo.alt = 'Логотип';
                 logo.onerror = function() {
-                    console.error('Ошибка загрузки логотипа');
+                    console.error('Ошибка загрузки логотипа:', appData.logo);
                     // Создаем заглушку для логотипа
                     logo.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="60" viewBox="0 0 120 60"><rect width="120" height="60" fill="%23014d77" rx="10"/><text x="60" y="35" font-family="Arial" font-size="14" fill="white" text-anchor="middle">ЛОГОТИП</text></svg>';
                 };
@@ -522,10 +503,6 @@
             
             // Создание текстового элемента
             function createTextElement() {
-                if (currentTextElement) {
-                    currentTextElement.remove();
-                }
-                
                 const textElement = document.createElement('div');
                 textElement.className = 'card-text';
                 textElement.textContent = greetingText.value;
@@ -640,7 +617,6 @@
                 img.alt = 'Стикер';
                 img.onerror = function() {
                     console.error('Ошибка загрузки стикера:', stickerUrl);
-                    // Запасной вариант если стикер не загрузился
                     sticker.innerHTML = '🎁';
                     sticker.style.display = 'flex';
                     sticker.style.alignItems = 'center';
@@ -783,7 +759,7 @@
                         
                         // Для текста также меняем размер шрифта
                         if (element.classList.contains('card-text')) {
-                            const baseSize = 1.5; // rem
+                            const baseSize = 1.5;
                             const scale = Math.min(width / 200, height / 100);
                             element.style.fontSize = (baseSize * scale) + 'rem';
                         }
@@ -798,9 +774,8 @@
                         element.style.width = width + 'px';
                         element.style.height = height + 'px';
                         
-                        // Для текста также меняем размер шрифта
                         if (element.classList.contains('card-text')) {
-                            const baseSize = 1.5; // rem
+                            const baseSize = 1.5;
                             const scale = Math.min(width / 200, height / 100);
                             element.style.fontSize = (baseSize * scale) + 'rem';
                         }
@@ -835,3 +810,4 @@
     </script>
 </body>
 </html>
+
