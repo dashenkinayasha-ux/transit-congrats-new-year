@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Новогодний конструктор открыток</title>
-    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Marck+Script&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Marck+Script&family=Bad+Script&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary-color: #014d77;
@@ -146,6 +146,10 @@
             z-index: 5;
             white-space: pre-line;
             max-width: 80%;
+            resize: both;
+            overflow: hidden;
+            min-width: 100px;
+            min-height: 50px;
         }
 
         .sticker {
@@ -185,13 +189,13 @@
             border-radius: 8px;
             border: none;
             background: rgba(255, 255, 255, 0.9);
-            font-family: 'Marck Script', cursive;
             font-size: 1rem;
         }
 
         textarea {
             min-height: 100px;
             resize: vertical;
+            font-family: inherit;
         }
 
         button {
@@ -201,6 +205,7 @@
             cursor: pointer;
             transition: all 0.3s ease;
             margin-top: 10px;
+            font-family: inherit;
         }
 
         button:hover {
@@ -225,11 +230,19 @@
             background-repeat: no-repeat;
             background-position: center;
             border: 2px solid transparent;
+            background-color: white;
+            padding: 5px;
         }
 
         .sticker-option:hover, .sticker-option.active {
             transform: scale(1.1);
             border-color: var(--accent-color);
+        }
+
+        .sticker-option img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
         }
 
         .text-align-buttons {
@@ -250,6 +263,39 @@
 
         .text-align-btn.active {
             background: var(--primary-color);
+        }
+
+        .font-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .font-btn {
+            flex: 1;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .font-btn.active {
+            background: var(--primary-color);
+        }
+
+        .font-marck {
+            font-family: 'Marck Script', cursive;
+        }
+
+        .font-caveat {
+            font-family: 'Caveat', cursive;
+        }
+
+        .font-badscript {
+            font-family: 'Bad Script', cursive;
         }
 
         .download-btn {
@@ -287,7 +333,7 @@
     <div class="container">
         <header>
             <h1>Новогодний Конструктор Открыток</h1>
-            <p>Создайте уникальную поздравительную открытку для коллеги</p>
+            <p>Создайте уникальную поздравительную открытку для вашего коллектива</p>
         </header>
 
         <div class="app-container">
@@ -314,6 +360,15 @@
                     </div>
 
                     <div class="control-group">
+                        <label>Шрифт текста</label>
+                        <div class="font-buttons">
+                            <div class="font-btn active font-marck" data-font="Marck Script">Marck Script</div>
+                            <div class="font-btn font-caveat" data-font="Caveat">Caveat</div>
+                            <div class="font-btn font-badscript" data-font="Bad Script">Bad Script</div>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
                         <label>Выравнивание текста</label>
                         <div class="text-align-buttons">
                             <div class="text-align-btn active" data-align="center">По центру</div>
@@ -337,7 +392,7 @@
                 <div class="card-preview card-vertical">
                     <div class="card-background" id="card-bg">
                         <img src="./images/logo3.png" alt="Логотип" class="card-logo" id="card-logo">
-                        <div class="card-text" id="card-text">С Новым Годом!</div>
+                        <!-- Текст будет добавлен динамически -->
                     </div>
                 </div>
             </div>
@@ -353,12 +408,14 @@
             const greetingText = document.getElementById('greeting-text');
             const cardPreview = document.querySelector('.card-preview');
             const cardBg = document.getElementById('card-bg');
-            const cardText = document.getElementById('card-text');
             const cardLogo = document.getElementById('card-logo');
             const textAlignBtns = document.querySelectorAll('.text-align-btn');
+            const fontBtns = document.querySelectorAll('.font-btn');
             const stickerGallery = document.getElementById('sticker-gallery');
             const downloadBtn = document.getElementById('download-btn');
             const snowflakesContainer = document.getElementById('snowflakes');
+            
+            let currentTextElement = null;
             
             // Создание снежинок
             function createSnowflakes() {
@@ -380,13 +437,7 @@
             function loadBackgrounds() {
                 const backgrounds = [
                     { id: 'bg1', name: 'Зимний пейзаж 1', url: './backgrounds/bg1.png' },
-                    { id: 'bg2', name: 'Зимний пейзаж 2', url: './backgrounds/bg2.png' },
-                    { id: 'bg3', name: 'Новогодний город', url: './backgrounds/bg3.png' },
-                    { id: 'bg4', name: 'Ёлка с шарами', url: './backgrounds/bg4.png' },
-                    { id: 'bg5', name: 'Снежный лес', url: './backgrounds/bg5.png' },
-                    { id: 'bg6', name: 'Праздничный декор', url: './backgrounds/bg6.png' },
-                    { id: 'bg7', name: 'Зимний вечер', url: './backgrounds/bg7.png' },
-                    { id: 'bg8', name: 'Новогоднее настроение', url: './backgrounds/bg8.png' }
+                    { id: 'bg2', name: 'Зимний пейзаж 2', url: './backgrounds/bg2.png' }
                 ];
                 
                 backgrounds.forEach(bg => {
@@ -406,14 +457,8 @@
             // Загрузка стикеров
             function loadStickers() {
                 const stickers = [
-                    { id: 'sticker1', name: 'Снеговик', url: './stickers/sticker1.png' },
-                    { id: 'sticker2', name: 'Дед Мороз', url: './stickers/sticker2.png' },
-                    { id: 'sticker3', name: 'Снежинка', url: './stickers/sticker3.png' },
-                    { id: 'sticker4', name: 'Подарок', url: './stickers/sticker4.png' },
-                    { id: 'sticker5', name: 'Ёлочный шар', url: './stickers/sticker5.png' },
-                    { id: 'sticker6', name: 'Олень', url: './stickers/sticker6.png' },
-                    { id: 'sticker7', name: 'Свеча', url: './stickers/sticker7.png' },
-                    { id: 'sticker8', name: 'Ёлка', url: './stickers/sticker8.png' }
+                    { id: 'sticker1', name: 'Стикер 1', url: './stickers/sticker1.png' },
+                    { id: 'sticker2', name: 'Стикер 2', url: './stickers/sticker2.png' }
                 ];
                 
                 stickers.forEach(sticker => {
@@ -427,21 +472,47 @@
                     const img = document.createElement('img');
                     img.src = sticker.url;
                     img.alt = sticker.name;
-                    img.style.width = '100%';
-                    img.style.height = '100%';
-                    img.style.objectFit = 'contain';
+                    img.onerror = function() {
+                        console.error('Ошибка загрузки стикера:', sticker.url);
+                    };
                     stickerOption.appendChild(img);
                     
                     stickerGallery.appendChild(stickerOption);
                 });
             }
             
+            // Создание текстового элемента
+            function createTextElement() {
+                if (currentTextElement) {
+                    currentTextElement.remove();
+                }
+                
+                const textElement = document.createElement('div');
+                textElement.className = 'card-text';
+                textElement.textContent = greetingText.value || 'С Новым Годом!';
+                textElement.style.fontFamily = 'Marck Script, cursive';
+                textElement.style.textAlign = 'center';
+                
+                // Начальная позиция
+                textElement.style.left = '50%';
+                textElement.style.top = '50%';
+                textElement.style.transform = 'translate(-50%, -50%)';
+                
+                // Добавляем функциональность перетаскивания и изменения размера
+                makeDraggable(textElement);
+                makeResizable(textElement);
+                
+                cardBg.appendChild(textElement);
+                currentTextElement = textElement;
+                return textElement;
+            }
+            
             // Инициализация
             createSnowflakes();
             loadBackgrounds();
             loadStickers();
+            createTextElement();
             updateCardOrientation();
-            updateTextAlign('center');
             
             // События
             orientationSelect.addEventListener('change', updateCardOrientation);
@@ -453,6 +524,14 @@
                     textAlignBtns.forEach(b => b.classList.remove('active'));
                     this.classList.add('active');
                     updateTextAlign(this.dataset.align);
+                });
+            });
+            
+            fontBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    fontBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    updateTextFont(this.dataset.font);
                 });
             });
             
@@ -482,11 +561,31 @@
             }
             
             function updateGreetingText() {
-                cardText.textContent = greetingText.value || 'С Новым Годом!';
+                if (currentTextElement) {
+                    currentTextElement.textContent = greetingText.value || 'С Новым Годом!';
+                }
             }
             
             function updateTextAlign(align) {
-                cardText.style.textAlign = align;
+                if (currentTextElement) {
+                    currentTextElement.style.textAlign = align;
+                }
+            }
+            
+            function updateTextFont(font) {
+                if (currentTextElement) {
+                    switch(font) {
+                        case 'Marck Script':
+                            currentTextElement.style.fontFamily = 'Marck Script, cursive';
+                            break;
+                        case 'Caveat':
+                            currentTextElement.style.fontFamily = 'Caveat, cursive';
+                            break;
+                        case 'Bad Script':
+                            currentTextElement.style.fontFamily = 'Bad Script, cursive';
+                            break;
+                    }
+                }
             }
             
             function addSticker(stickerId, stickerUrl) {
@@ -497,6 +596,9 @@
                 const img = document.createElement('img');
                 img.src = stickerUrl;
                 img.alt = 'Стикер';
+                img.onerror = function() {
+                    console.error('Ошибка загрузки стикера:', stickerUrl);
+                };
                 sticker.appendChild(img);
                 
                 // Начальная позиция в центре
@@ -656,4 +758,3 @@
     </script>
 </body>
 </html>
-
