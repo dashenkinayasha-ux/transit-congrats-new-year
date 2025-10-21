@@ -3,15 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Новогодний конструктор открыток</title>
-    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Marck+Script&family=Bad+Script&display=swap" rel="stylesheet">
+    <title>Новогодний Конструктор Открыток</title>
     <style>
-        :root {
-            --primary-color: #014d77;
-            --text-color: #ffffff;
-            --accent-color: #40e0d0;
-        }
-
         * {
             margin: 0;
             padding: 0;
@@ -19,672 +12,473 @@
         }
 
         body {
-            font-family: 'Marck Script', cursive;
-            background: linear-gradient(135deg, #0a2a5e, #014d77);
-            color: var(--text-color);
+            font-family: 'Arial', sans-serif;
+            background: url('new-year-bg.jpg') fixed;
+            background-size: cover;
             min-height: 100vh;
             padding: 20px;
-            overflow-x: hidden;
-            position: relative;
-        }
-
-        .snowflakes {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: -1;
-        }
-
-        .snowflake {
-            position: absolute;
-            top: -10px;
-            color: white;
-            font-size: 1.5rem;
-            opacity: 0.8;
-            animation: fall linear infinite;
-        }
-
-        @keyframes fall {
-            to {
-                transform: translateY(100vh) rotate(360deg);
-            }
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         .container {
             max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 30px;
-            padding: 20px;
-            background: linear-gradient(135deg, #014d77, #40e0d0);
-            border-radius: 15px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
         }
 
         h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-        }
-
-        .app-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-        }
-
-        .editor-panel {
-            flex: 1;
-            min-width: 300px;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        }
-
-        .preview-container {
-            flex: 2;
-            min-width: 500px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .card-preview {
-            width: 100%;
-            max-width: 600px;
-            background: white;
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
-            position: relative;
-            margin-bottom: 20px;
-        }
-
-        .card-vertical {
-            aspect-ratio: 3/4;
-        }
-
-        .card-horizontal {
-            aspect-ratio: 4/3;
-        }
-
-        .card-background {
-            width: 100%;
-            height: 100%;
-            background-size: cover;
-            background-position: center;
-            position: relative;
-        }
-
-        .card-logo {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 120px;
-            height: 80px;
-            object-fit: contain;
-            z-index: 10;
-        }
-
-        .card-text {
-            position: absolute;
-            color: var(--text-color);
-            font-size: 24px;
             text-align: center;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
-            padding: 10px;
-            cursor: move;
-            user-select: none;
-            z-index: 5;
-            white-space: pre-line;
-            background: rgba(1, 77, 119, 0.3);
-            border-radius: 8px;
-            min-width: 150px;
-            min-height: 60px;
-            resize: both;
-            overflow: auto;
+            color: #d40000;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
         }
 
-        .sticker {
-            position: absolute;
-            cursor: move;
-            user-select: none;
-            z-index: 5;
-            min-width: 50px;
-            min-height: 50px;
-        }
-
-        .sticker img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
+        .creator-section {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
         }
 
         .controls {
-            margin-bottom: 20px;
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            border: 2px solid #e9ecef;
         }
 
         .control-group {
+            margin-bottom: 25px;
+        }
+
+        .control-group h3 {
+            color: #d40000;
             margin-bottom: 15px;
+            font-size: 1.2em;
         }
 
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
+        .orientation-buttons {
+            display: flex;
+            gap: 10px;
         }
 
-        select, input, textarea, button {
-            width: 100%;
-            padding: 10px;
+        .orientation-btn {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #dee2e6;
+            background: white;
             border-radius: 8px;
-            border: none;
-            background: rgba(255, 255, 255, 0.9);
-            font-size: 1rem;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
         }
 
-        textarea {
-            min-height: 100px;
+        .orientation-btn.active {
+            border-color: #d40000;
+            background: #fff5f5;
+            color: #d40000;
+        }
+
+        .backgrounds-grid, .stickers-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .background-item, .sticker-item {
+            aspect-ratio: 1;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            cursor: pointer;
+            background-size: cover;
+            background-position: center;
+            transition: all 0.3s;
+        }
+
+        .background-item.active, .sticker-item.active {
+            border-color: #d40000;
+            transform: scale(0.95);
+        }
+
+        .text-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 14px;
             resize: vertical;
-            font-family: inherit;
+            min-height: 80px;
         }
 
-        button {
-            background: var(--primary-color);
-            color: white;
+        .preview-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid #e9ecef;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #cardCanvas {
+            max-width: 100%;
+            max-height: 500px;
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            background: white;
+        }
+
+        .actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
             font-weight: bold;
             cursor: pointer;
-            transition: all 0.3s ease;
-            margin-top: 10px;
-            font-family: inherit;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        button:hover {
-            background: var(--accent-color);
+        .btn-download {
+            background: #d40000;
+            color: white;
+        }
+
+        .btn-download:hover {
+            background: #b30000;
             transform: translateY(-2px);
         }
 
-        .sticker-gallery {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 10px;
+        .btn-clear {
+            background: #6c757d;
+            color: white;
         }
 
-        .sticker-option {
-            width: 60px;
-            height: 60px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: transform 0.3s ease;
-            border: 2px solid transparent;
-            background-color: white;
-            padding: 5px;
+        .btn-clear:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
         }
 
-        .sticker-option:hover {
-            transform: scale(1.1);
-            border-color: var(--accent-color);
-        }
-
-        .sticker-option img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-        }
-
-        .text-align-buttons {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .text-align-btn {
-            flex: 1;
-            padding: 8px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 5px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .text-align-btn.active {
-            background: var(--primary-color);
-        }
-
-        .font-buttons {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .font-btn {
-            flex: 1;
-            padding: 8px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 5px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-family: inherit;
-        }
-
-        .font-btn.active {
-            background: var(--primary-color);
-        }
-
-        .font-marck {
-            font-family: 'Marck Script', cursive;
-        }
-
-        .font-caveat {
-            font-family: 'Caveat', cursive;
-        }
-
-        .font-badscript {
-            font-family: 'Bad Script', cursive;
-        }
-
-        .download-btn {
-            background: linear-gradient(135deg, #014d77, #40e0d0);
-            padding: 15px;
-            font-size: 1.2rem;
-            margin-top: 20px;
-        }
-
-        .resize-handle {
+        .logo {
             position: absolute;
-            width: 15px;
-            height: 15px;
-            background: var(--accent-color);
-            border-radius: 50%;
-            bottom: -5px;
-            right: -5px;
-            cursor: nwse-resize;
+            top: 15px;
+            right: 15px;
+            max-width: 80px;
+            height: auto;
             z-index: 10;
         }
 
+        /* Адаптивность */
         @media (max-width: 768px) {
-            .app-container {
-                flex-direction: column;
+            .creator-section {
+                grid-template-columns: 1fr;
             }
             
-            .preview-container, .editor-panel {
-                min-width: 100%;
+            .controls {
+                order: 2;
+            }
+            
+            .preview-section {
+                order: 1;
+            }
+            
+            h1 {
+                font-size: 2em;
             }
         }
     </style>
 </head>
 <body>
-    <div class="snowflakes" id="snowflakes"></div>
-
     <div class="container">
-        <header>
-            <h1>Новогодний Конструктор Открыток</h1>
-            <p>Создайте уникальную поздравительную открытку для вашего коллектива</p>
-        </header>
-
-        <div class="app-container">
-            <div class="editor-panel">
-                <div class="controls">
-                    <div class="control-group">
-                        <label for="orientation">Формат открытки</label>
-                        <select id="orientation">
-                            <option value="vertical">Вертикальный</option>
-                            <option value="horizontal">Горизонтальный</option>
-                        </select>
-                    </div>
-
-                    <div class="control-group">
-                        <label for="background">Фон открытки</label>
-                        <select id="background">
-                            <!-- Фоны будут добавлены через JavaScript -->
-                        </select>
-                    </div>
-
-                    <div class="control-group">
-                        <label for="greeting-text">Текст поздравления</label>
-                        <textarea id="greeting-text" placeholder="Введите ваш текст поздравления...">С Новым Годом!</textarea>
-                    </div>
-
-                    <div class="control-group">
-                        <label>Шрифт текста</label>
-                        <div class="font-buttons">
-                            <div class="font-btn active font-marck" data-font="Marck Script">Marck Script</div>
-                            <div class="font-btn font-caveat" data-font="Caveat">Caveat</div>
-                            <div class="font-btn font-badscript" data-font="Bad Script">Bad Script</div>
-                        </div>
-                    </div>
-
-                    <div class="control-group">
-                        <label>Выравнивание текста</label>
-                        <div class="text-align-buttons">
-                            <div class="text-align-btn active" data-align="center">По центру</div>
-                            <div class="text-align-btn" data-align="left">Слева</div>
-                            <div class="text-align-btn" data-align="right">Справа</div>
-                        </div>
-                    </div>
-
-                    <div class="control-group">
-                        <label>Добавить стикеры</label>
-                        <div class="sticker-gallery" id="sticker-gallery">
-                            <!-- Стикеры будут добавлены через JavaScript -->
-                        </div>
+        <h1>🎄 Новогодний Конструктор Открыток 🎅</h1>
+        
+        <div class="creator-section">
+            <div class="controls">
+                <!-- Выбор ориентации -->
+                <div class="control-group">
+                    <h3>Формат открытки</h3>
+                    <div class="orientation-buttons">
+                        <div class="orientation-btn active" data-orientation="vertical">📱 Вертикальная</div>
+                        <div class="orientation-btn" data-orientation="horizontal">🖥️ Горизонтальная</div>
                     </div>
                 </div>
 
-                <button id="download-btn" class="download-btn">Скачать открытку</button>
-            </div>
-
-            <div class="preview-container">
-                <div class="card-preview card-vertical">
-                    <div class="card-background" id="card-bg">
-                        <!-- Элементы будут добавлены динамически -->
+                <!-- Выбор фона -->
+                <div class="control-group">
+                    <h3>Фон открытки</h3>
+                    <div class="backgrounds-grid" id="backgroundsGrid">
+                        <!-- Фоны будут добавлены через JS -->
                     </div>
                 </div>
+
+                <!-- Добавление стикеров -->
+                <div class="control-group">
+                    <h3>Новогодние стикеры</h3>
+                    <div class="stickers-grid" id="stickersGrid">
+                        <!-- Стикеры будут добавлены через JS -->
+                    </div>
+                </div>
+
+                <!-- Текст поздравления -->
+                <div class="control-group">
+                    <h3>Текст поздравления</h3>
+                    <textarea class="text-input" id="greetingText" placeholder="Введите ваше новогоднее поздравление..."></textarea>
+                </div>
             </div>
+
+            <div class="preview-section">
+                <canvas id="cardCanvas"></canvas>
+                <img src="logo.png" alt="Логотип" class="logo" id="cardLogo">
+            </div>
+        </div>
+
+        <div class="actions">
+            <button class="btn btn-download" onclick="downloadCard()">
+                💾 Скачать открытку
+            </button>
+            <button class="btn btn-clear" onclick="clearCard()">
+                🗑️ Очистить
+            </button>
         </div>
     </div>
 
-    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Данные файлов
-            const appData = {
-                backgrounds: ['bg1.png', 'bg2.png', 'bg3.png', 'bg4.png', 'bg5.png', 'bg6.png', 'bg7.png', 'bg8.png'],
-                stickers: ['sticker1.png', 'sticker2.png', 'sticker3.png', 'sticker4.png', 'sticker5.png', 'sticker6.png', 'sticker7.png', 'sticker8.png'],
-                logo: 'logo3.png'
-            };
+        // Конфигурация
+        const config = {
+            orientations: {
+                vertical: { width: 400, height: 600 },
+                horizontal: { width: 600, height: 400 }
+            },
+            backgrounds: [
+                'bg1.jpg', 'bg2.jpg', 'bg3.jpg', 'bg4.jpg',
+                'bg5.jpg', 'bg6.jpg', 'bg7.jpg', 'bg8.jpg'
+            ],
+            stickers: [
+                'sticker1.png', 'sticker2.png', 'sticker3.png', 'sticker4.png',
+                'sticker5.png', 'sticker6.png', 'sticker7.png', 'sticker8.png'
+            ]
+        };
 
-            // Элементы DOM
-            const elements = {
-                orientation: document.getElementById('orientation'),
-                background: document.getElementById('background'),
-                greetingText: document.getElementById('greeting-text'),
-                cardPreview: document.querySelector('.card-preview'),
-                cardBg: document.getElementById('card-bg'),
-                textAlignBtns: document.querySelectorAll('.text-align-btn'),
-                fontBtns: document.querySelectorAll('.font-btn'),
-                stickerGallery: document.getElementById('sticker-gallery'),
-                downloadBtn: document.getElementById('download-btn'),
-                snowflakes: document.getElementById('snowflakes')
-            };
+        // Состояние приложения
+        let state = {
+            orientation: 'vertical',
+            selectedBackground: null,
+            selectedStickers: [],
+            greetingText: ''
+        };
 
-            let currentTextElement = null;
+        // Элементы DOM
+        const canvas = document.getElementById('cardCanvas');
+        const ctx = canvas.getContext('2d');
+        const backgroundsGrid = document.getElementById('backgroundsGrid');
+        const stickersGrid = document.getElementById('stickersGrid');
+        const greetingTextInput = document.getElementById('greetingText');
+        const logo = document.getElementById('cardLogo');
 
-            // Создание снежинок
-            function createSnowflakes() {
-                for (let i = 0; i < 50; i++) {
-                    const snowflake = document.createElement('div');
-                    snowflake.className = 'snowflake';
-                    snowflake.innerHTML = '❄';
-                    snowflake.style.left = Math.random() * 100 + 'vw';
-                    snowflake.style.animationDuration = (Math.random() * 10 + 5) + 's';
-                    snowflake.style.animationDelay = Math.random() * 5 + 's';
-                    snowflake.style.opacity = Math.random() * 0.7 + 0.3;
-                    elements.snowflakes.appendChild(snowflake);
-                }
-            }
-
-            // Загрузка фонов
-            function loadBackgrounds() {
-                appData.backgrounds.forEach((bg, index) => {
-                    const option = document.createElement('option');
-                    option.value = bg;
-                    option.textContent = `Фон ${index + 1}`;
-                    elements.background.appendChild(option);
-                });
-                
-                // Устанавливаем первый фон
-                updateBackground();
-            }
-
-            // Загрузка стикеров
-            function loadStickers() {
-                appData.stickers.forEach((sticker, index) => {
-                    const stickerOption = document.createElement('div');
-                    stickerOption.className = 'sticker-option';
-                    stickerOption.title = `Стикер ${index + 1}`;
-                    
-                    const img = document.createElement('img');
-                    img.src = `./stickers/${sticker}`;
-                    img.alt = `Стикер ${index + 1}`;
-                    stickerOption.appendChild(img);
-                    
-                    stickerOption.addEventListener('click', () => addSticker(sticker));
-                    elements.stickerGallery.appendChild(stickerOption);
-                });
-            }
-
-            // Загрузка логотипа
-            function loadLogo() {
-                const logo = document.createElement('img');
-                logo.className = 'card-logo';
-                logo.src = `./images/${appData.logo}`;
-                logo.alt = 'Логотип';
-                elements.cardBg.appendChild(logo);
-            }
-
-            // Создание текстового элемента
-            function createTextElement() {
-                const textElement = document.createElement('div');
-                textElement.className = 'card-text';
-                textElement.textContent = elements.greetingText.value;
-                textElement.style.left = '50%';
-                textElement.style.top = '50%';
-                textElement.style.transform = 'translate(-50%, -50%)';
-                
-                makeDraggable(textElement);
-                makeResizable(textElement);
-                
-                elements.cardBg.appendChild(textElement);
-                currentTextElement = textElement;
-            }
-
-            // Функции обновления
-            function updateCardOrientation() {
-                const isVertical = elements.orientation.value === 'vertical';
-                elements.cardPreview.className = `card-preview ${isVertical ? 'card-vertical' : 'card-horizontal'}`;
-            }
-
-            function updateBackground() {
-                const selectedBg = elements.background.value;
-                elements.cardBg.style.backgroundImage = `url(./backgrounds/${selectedBg})`;
-            }
-
-            function updateGreetingText() {
-                if (currentTextElement) {
-                    currentTextElement.textContent = elements.greetingText.value;
-                }
-            }
-
-            function updateTextAlign(align) {
-                if (currentTextElement) {
-                    currentTextElement.style.textAlign = align;
-                }
-            }
-
-            function updateTextFont(font) {
-                if (currentTextElement) {
-                    currentTextElement.style.fontFamily = font === 'Marck Script' ? "'Marck Script', cursive" :
-                                                       font === 'Caveat' ? "'Caveat', cursive" :
-                                                       "'Bad Script', cursive";
-                }
-            }
-
-            // Добавление стикера
-            function addSticker(stickerName) {
-                const sticker = document.createElement('div');
-                sticker.className = 'sticker';
-                
-                const img = document.createElement('img');
-                img.src = `./stickers/${stickerName}`;
-                img.alt = 'Стикер';
-                sticker.appendChild(img);
-                
-                sticker.style.left = '50%';
-                sticker.style.top = '50%';
-                sticker.style.transform = 'translate(-50%, -50%)';
-                sticker.style.width = '80px';
-                sticker.style.height = '80px';
-                
-                makeDraggable(sticker);
-                makeResizable(sticker);
-                
-                elements.cardBg.appendChild(sticker);
-            }
-
-            // Функции перетаскивания и изменения размера
-            function makeDraggable(element) {
-                let isDragging = false;
-                let startX, startY, initialX, initialY;
-
-                element.addEventListener('mousedown', startDrag);
-                element.addEventListener('touchstart', startDragTouch);
-
-                function startDrag(e) {
-                    isDragging = true;
-                    startX = e.clientX || e.touches[0].clientX;
-                    startY = e.clientY || e.touches[0].clientY;
-                    initialX = element.offsetLeft;
-                    initialY = element.offsetTop;
-                    
-                    document.addEventListener('mousemove', drag);
-                    document.addEventListener('touchmove', drag);
-                    document.addEventListener('mouseup', stopDrag);
-                    document.addEventListener('touchend', stopDrag);
-                }
-
-                function drag(e) {
-                    if (!isDragging) return;
-                    e.preventDefault();
-                    
-                    const currentX = e.clientX || e.touches[0].clientX;
-                    const currentY = e.clientY || e.touches[0].clientY;
-                    
-                    const deltaX = currentX - startX;
-                    const deltaY = currentY - startY;
-                    
-                    element.style.left = (initialX + deltaX) + 'px';
-                    element.style.top = (initialY + deltaY) + 'px';
-                    element.style.transform = 'none';
-                }
-
-                function stopDrag() {
-                    isDragging = false;
-                    document.removeEventListener('mousemove', drag);
-                    document.removeEventListener('touchmove', drag);
-                }
-
-                function startDragTouch(e) {
-                    startDrag(e);
-                }
-            }
-
-            function makeResizable(element) {
-                const handle = document.createElement('div');
-                handle.className = 'resize-handle';
-                element.appendChild(handle);
-
-                let isResizing = false;
-                let startX, startY, startWidth, startHeight;
-
-                handle.addEventListener('mousedown', startResize);
-                handle.addEventListener('touchstart', startResizeTouch);
-
-                function startResize(e) {
-                    isResizing = true;
-                    startX = e.clientX;
-                    startY = e.clientY;
-                    startWidth = parseInt(element.offsetWidth);
-                    startHeight = parseInt(element.offsetHeight);
-                    
-                    document.addEventListener('mousemove', resize);
-                    document.addEventListener('mouseup', stopResize);
-                }
-
-                function resize(e) {
-                    if (!isResizing) return;
-                    
-                    const width = startWidth + (e.clientX - startX);
-                    const height = startHeight + (e.clientY - startY);
-                    
-                    if (width > 50 && height > 30) {
-                        element.style.width = width + 'px';
-                        element.style.height = height + 'px';
-                        
-                        // Меняем размер шрифта для текста
-                        if (element.classList.contains('card-text')) {
-                            const baseSize = 24; // начальный размер шрифта
-                            const scale = Math.min(width / 200, height / 80);
-                            element.style.fontSize = (baseSize * scale) + 'px';
-                        }
-                    }
-                }
-
-                function stopResize() {
-                    isResizing = false;
-                    document.removeEventListener('mousemove', resize);
-                }
-
-                function startResizeTouch(e) {
-                    startResize(e);
-                }
-            }
-
-            // Скачивание открытки
-            function downloadCard() {
-                html2canvas(elements.cardPreview, {
-                    scale: 3,
-                    useCORS: true,
-                    allowTaint: false
-                }).then(canvas => {
-                    const link = document.createElement('a');
-                    link.download = 'новогодняя-открытка.png';
-                    link.href = canvas.toDataURL();
-                    link.click();
-                });
-            }
-
-            // Инициализация
-            createSnowflakes();
+        // Инициализация
+        function init() {
+            setupCanvas();
             loadBackgrounds();
             loadStickers();
-            loadLogo();
-            createTextElement();
+            setupEventListeners();
+            renderCard();
+        }
 
-            // События
-            elements.orientation.addEventListener('change', updateCardOrientation);
-            elements.background.addEventListener('change', updateBackground);
-            elements.greetingText.addEventListener('input', updateGreetingText);
-            elements.downloadBtn.addEventListener('click', downloadCard);
+        function setupCanvas() {
+            const { width, height } = config.orientations[state.orientation];
+            canvas.width = width;
+            canvas.height = height;
+            canvas.style.width = `${width}px`;
+            canvas.style.height = `${height}px`;
+        }
 
-            elements.textAlignBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    elements.textAlignBtns.forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    updateTextAlign(this.dataset.align);
+        function loadBackgrounds() {
+            backgroundsGrid.innerHTML = '';
+            config.backgrounds.forEach((bg, index) => {
+                const bgItem = document.createElement('div');
+                bgItem.className = 'background-item';
+                bgItem.style.backgroundImage = `url(${bg})`;
+                bgItem.dataset.background = bg;
+                bgItem.addEventListener('click', () => selectBackground(bg));
+                backgroundsGrid.appendChild(bgItem);
+            });
+        }
+
+        function loadStickers() {
+            stickersGrid.innerHTML = '';
+            config.stickers.forEach((sticker, index) => {
+                const stickerItem = document.createElement('div');
+                stickerItem.className = 'sticker-item';
+                stickerItem.style.backgroundImage = `url(${sticker})`;
+                stickerItem.dataset.sticker = sticker;
+                stickerItem.addEventListener('click', () => toggleSticker(sticker));
+                stickersGrid.appendChild(stickerItem);
+            });
+        }
+
+        function setupEventListeners() {
+            // Ориентация
+            document.querySelectorAll('.orientation-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.orientation-btn').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    state.orientation = e.target.dataset.orientation;
+                    setupCanvas();
+                    renderCard();
                 });
             });
 
-            elements.fontBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    elements.fontBtns.forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    updateTextFont(this.dataset.font);
-                });
+            // Текст
+            greetingTextInput.addEventListener('input', (e) => {
+                state.greetingText = e.target.value;
+                renderCard();
             });
-        });
+
+            // Перетаскивание стикеров
+            canvas.addEventListener('click', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                // Можно добавить функционал перемещения стикеров
+                console.log('Click at:', x, y);
+            });
+        }
+
+        function selectBackground(background) {
+            document.querySelectorAll('.background-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.dataset.background === background) {
+                    item.classList.add('active');
+                }
+            });
+            state.selectedBackground = background;
+            renderCard();
+        }
+
+        function toggleSticker(sticker) {
+            const index = state.selectedStickers.indexOf(sticker);
+            if (index > -1) {
+                state.selectedStickers.splice(index, 1);
+                document.querySelector(`.sticker-item[data-sticker="${sticker}"]`).classList.remove('active');
+            } else {
+                state.selectedStickers.push(sticker);
+                document.querySelector(`.sticker-item[data-sticker="${sticker}"]`).classList.add('active');
+            }
+            renderCard();
+        }
+
+        function renderCard() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Фон
+            if (state.selectedBackground) {
+                const bgImg = new Image();
+                bgImg.onload = () => {
+                    ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+                    renderContent();
+                };
+                bgImg.src = state.selectedBackground;
+            } else {
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                renderContent();
+            }
+        }
+
+        function renderContent() {
+            // Стикеры
+            state.selectedStickers.forEach(sticker => {
+                const img = new Image();
+                img.onload = () => {
+                    const size = Math.min(canvas.width, canvas.height) * 0.2;
+                    const x = Math.random() * (canvas.width - size);
+                    const y = Math.random() * (canvas.height - size);
+                    ctx.drawImage(img, x, y, size, size);
+                };
+                img.src = sticker;
+            });
+
+            // Текст
+            if (state.greetingText) {
+                ctx.fillStyle = '#d40000';
+                ctx.font = 'bold 24px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                const lines = wrapText(ctx, state.greetingText, canvas.width * 0.8);
+                const lineHeight = 30;
+                const startY = canvas.height / 2 - (lines.length * lineHeight) / 2;
+                
+                lines.forEach((line, index) => {
+                    ctx.fillText(line, canvas.width / 2, startY + index * lineHeight);
+                });
+            }
+
+            // Логотип
+            if (logo.complete && logo.naturalHeight !== 0) {
+                const logoSize = Math.min(canvas.width, canvas.height) * 0.1;
+                ctx.drawImage(logo, canvas.width - logoSize - 10, 10, logoSize, logoSize);
+            }
+        }
+
+        function wrapText(context, text, maxWidth) {
+            const words = text.split(' ');
+            const lines = [];
+            let currentLine = words[0];
+
+            for (let i = 1; i < words.length; i++) {
+                const word = words[i];
+                const width = context.measureText(currentLine + ' ' + word).width;
+                if (width < maxWidth) {
+                    currentLine += ' ' + word;
+                } else {
+                    lines.push(currentLine);
+                    currentLine = word;
+                }
+            }
+            lines.push(currentLine);
+            return lines;
+        }
+
+        function downloadCard() {
+            const link = document.createElement('a');
+            link.download = 'новогодняя-открытка.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        function clearCard() {
+            state.selectedBackground = null;
+            state.selectedStickers = [];
+            state.greetingText = '';
+            greetingTextInput.value = '';
+            
+            document.querySelectorAll('.background-item, .sticker-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            renderCard();
+        }
+
+        // Запуск приложения
+        window.addEventListener('load', init);
     </script>
 </body>
 </html>
-
