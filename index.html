@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Новогодний Конструктор Открыток</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Mountains+of+Christmas:wght@700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&family=Playfair+Display:wght@700&display=swap');
         
         * {
             margin: 0;
@@ -14,7 +14,7 @@
         }
 
         body {
-            font-family: 'Dancing Script', cursive;
+            font-family: 'Playfair Display', serif;
             background: url('new-year-bg.jpg') fixed;
             background-size: cover;
             min-height: 100vh;
@@ -40,7 +40,7 @@
             margin-bottom: 30px;
             font-size: 2.8em;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
-            font-family: 'Mountains of Christmas', cursive;
+            font-family: 'Great Vibes', cursive;
         }
 
         .creator-section {
@@ -67,7 +67,7 @@
             color: #014d77;
             margin-bottom: 15px;
             font-size: 1.4em;
-            font-family: 'Mountains of Christmas', cursive;
+            font-family: 'Great Vibes', cursive;
         }
 
         .orientation-buttons {
@@ -84,7 +84,7 @@
             cursor: pointer;
             text-align: center;
             transition: all 0.3s;
-            font-family: 'Dancing Script', cursive;
+            font-family: 'Playfair Display', serif;
             font-size: 16px;
         }
 
@@ -129,7 +129,7 @@
             font-size: 16px;
             resize: vertical;
             min-height: 80px;
-            font-family: 'Dancing Script', cursive;
+            font-family: 'Playfair Display', serif;
             white-space: pre-wrap;
         }
 
@@ -153,6 +153,8 @@
             background: white;
             cursor: grab;
             touch-action: none;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
         }
 
         #cardCanvas.dragging {
@@ -169,7 +171,7 @@
             z-index: 100;
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
             font-size: 12px;
-            font-family: 'Dancing Script', cursive;
+            font-family: 'Playfair Display', serif;
         }
 
         .size-control {
@@ -200,7 +202,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            font-family: 'Dancing Script', cursive;
+            font-family: 'Playfair Display', serif;
         }
 
         .btn-download {
@@ -228,7 +230,15 @@
             color: #666;
             margin-top: 10px;
             font-size: 16px;
-            font-family: 'Dancing Script', cursive;
+            font-family: 'Playfair Display', serif;
+        }
+
+        .quality-notice {
+            text-align: center;
+            color: #d35400;
+            margin-top: 5px;
+            font-size: 14px;
+            font-family: 'Playfair Display', serif;
         }
 
         /* Адаптивность */
@@ -338,10 +348,13 @@
         <div class="instructions">
             💡 Для изменения размера: Shift + колесико мыши или два пальца на сенсорном экране
         </div>
+        <div class="quality-notice">
+            ⭐ Открытка создается в высоком качестве для идельной печати
+        </div>
 
         <div class="actions">
-            <button class="btn btn-download" onclick="downloadCard()">
-                💾 Скачать открытку
+            <button class="btn btn-download" onclick="downloadHighQualityCard()">
+                💾 Скачать открытку (HQ)
             </button>
             <button class="btn btn-clear" onclick="clearCard()">
                 🗑️ Очистить
@@ -350,11 +363,11 @@
     </div>
 
     <script>
-        // Конфигурация
+        // Конфигурация с высоким разрешением
         const config = {
             orientations: {
-                vertical: { width: 400, height: 600 },
-                horizontal: { width: 600, height: 400 }
+                vertical: { width: 1200, height: 1800 }, // Увеличили в 3 раза для высокого качества
+                horizontal: { width: 1800, height: 1200 }
             },
             backgrounds: [
                 'bg1.png', 'bg2.png', 'bg3.png', 'bg4.png',
@@ -389,7 +402,7 @@
 
         // Элементы DOM
         const canvas = document.getElementById('cardCanvas');
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { alpha: false }); // Отключаем альфа-канал для лучшего качества
         const backgroundsGrid = document.getElementById('backgroundsGrid');
         const stickersGrid = document.getElementById('stickersGrid');
         const greetingTextInput = document.getElementById('greetingText');
@@ -410,21 +423,19 @@
 
         function setupCanvas() {
             const { width, height } = config.orientations[state.orientation];
+            
+            // Устанавливаем реальный размер канваса (высокое качество)
             canvas.width = width;
             canvas.height = height;
             
-            // Для мобильных устройств ограничиваем максимальный размер
-            const maxWidth = window.innerWidth * 0.9;
-            const maxHeight = window.innerHeight * 0.6;
+            // Для отображения уменьшаем размер
+            const displayScale = 0.3;
+            canvas.style.width = `${width * displayScale}px`;
+            canvas.style.height = `${height * displayScale}px`;
             
-            if (width > maxWidth || height > maxHeight) {
-                const scale = Math.min(maxWidth / width, maxHeight / height);
-                canvas.style.width = `${width * scale}px`;
-                canvas.style.height = `${height * scale}px`;
-            } else {
-                canvas.style.width = `${width}px`;
-                canvas.style.height = `${height}px`;
-            }
+            // Улучшаем качество рендеринга
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
         }
 
         function loadBackgrounds() {
@@ -505,9 +516,9 @@
             sizeSlider.addEventListener('input', (e) => {
                 if (state.selectedElement !== null) {
                     if (state.dragType === 'sticker') {
-                        state.stickers[state.selectedElement].size = parseInt(e.target.value);
+                        state.stickers[state.selectedElement].size = parseInt(e.target.value) * 3; // Увеличиваем для HQ
                     } else if (state.dragType === 'text') {
-                        state.textElements[0].fontSize = parseInt(e.target.value);
+                        state.textElements[0].fontSize = parseInt(e.target.value) * 3; // Увеличиваем для HQ
                         updateTextLines();
                     }
                     renderCard();
@@ -528,7 +539,7 @@
                     text: state.greetingText,
                     x: canvas.width / 2,
                     y: canvas.height / 2,
-                    fontSize: 24,
+                    fontSize: 72, // Увеличили для HQ
                     id: 'text-' + Date.now(),
                     lines: []
                 });
@@ -558,7 +569,7 @@
                 
                 const words = paragraph.split(' ');
                 let currentLine = words[0];
-                ctx.font = `${textElement.fontSize}px "Dancing Script"`;
+                ctx.font = `${textElement.fontSize}px "Great Vibes"`;
 
                 for (let i = 1; i < words.length; i++) {
                     const word = words[i];
@@ -603,7 +614,7 @@
                     state.isDragging = true;
                     state.dragOffset.x = coords.x - textElement.x;
                     state.dragOffset.y = coords.y - textElement.y;
-                    sizeSlider.value = textElement.fontSize;
+                    sizeSlider.value = textElement.fontSize / 3; // Масштабируем для слайдера
                     updateStickerControlsPosition(textElement);
                     canvas.classList.add('dragging');
                     renderCard();
@@ -625,7 +636,7 @@
 
         function getTextWidth(textElement) {
             let maxWidth = 0;
-            ctx.font = `${textElement.fontSize}px "Dancing Script"`;
+            ctx.font = `${textElement.fontSize}px "Great Vibes"`;
             textElement.lines.forEach(line => {
                 const width = ctx.measureText(line).width;
                 if (width > maxWidth) maxWidth = width;
@@ -675,16 +686,16 @@
         function handleWheel(e) {
             if (state.selectedElement !== null && e.shiftKey) {
                 e.preventDefault();
-                const delta = -Math.sign(e.deltaY) * 2;
+                const delta = -Math.sign(e.deltaY) * 6; // Увеличили шаг для HQ
                 
                 if (state.dragType === 'sticker') {
                     const sticker = state.stickers[state.selectedElement];
-                    sticker.size = Math.max(30, Math.min(200, sticker.size + delta));
-                    sizeSlider.value = sticker.size;
+                    sticker.size = Math.max(90, Math.min(600, sticker.size + delta));
+                    sizeSlider.value = sticker.size / 3;
                 } else if (state.dragType === 'text' && state.textElements.length > 0) {
                     const textElement = state.textElements[0];
-                    textElement.fontSize = Math.max(16, Math.min(48, textElement.fontSize + delta));
-                    sizeSlider.value = textElement.fontSize;
+                    textElement.fontSize = Math.max(48, Math.min(144, textElement.fontSize + delta));
+                    sizeSlider.value = textElement.fontSize / 3;
                     updateTextLines();
                 }
                 
@@ -721,12 +732,12 @@
                 
                 if (state.dragType === 'sticker') {
                     const sticker = state.stickers[state.selectedElement];
-                    sticker.size = Math.max(30, Math.min(200, sticker.size * scale));
-                    sizeSlider.value = sticker.size;
+                    sticker.size = Math.max(90, Math.min(600, sticker.size * scale));
+                    sizeSlider.value = sticker.size / 3;
                 } else if (state.dragType === 'text' && state.textElements.length > 0) {
                     const textElement = state.textElements[0];
-                    textElement.fontSize = Math.max(16, Math.min(48, textElement.fontSize * scale));
-                    sizeSlider.value = textElement.fontSize;
+                    textElement.fontSize = Math.max(48, Math.min(144, textElement.fontSize * scale));
+                    sizeSlider.value = textElement.fontSize / 3;
                     updateTextLines();
                 }
                 
@@ -775,8 +786,8 @@
             if (top + controlsHeight > canvas.height) top = canvas.height - controlsHeight - 10;
             
             stickerControls.style.display = 'block';
-            stickerControls.style.left = left + 'px';
-            stickerControls.style.top = top + 'px';
+            stickerControls.style.left = (left * 0.3) + 'px'; // Масштабируем для отображения
+            stickerControls.style.top = (top * 0.3) + 'px';
         }
 
         function selectBackground(background) {
@@ -795,7 +806,7 @@
                 src: stickerSrc,
                 x: canvas.width / 2,
                 y: canvas.height / 2,
-                size: 100,
+                size: 300, // Увеличили для HQ
                 id: Date.now() + Math.random()
             };
             state.stickers.push(sticker);
@@ -812,7 +823,7 @@
                     
                     state.selectedElement = i;
                     state.dragType = 'sticker';
-                    sizeSlider.value = sticker.size;
+                    sizeSlider.value = sticker.size / 3;
                     updateStickerControlsPosition(sticker);
                     renderCard();
                     return;
@@ -842,7 +853,9 @@
         }
 
         function renderCard() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // Очищаем канвас белым цветом
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             // Фон с сохранением пропорций
             if (state.selectedBackground) {
@@ -870,9 +883,6 @@
                     
                     ctx.drawImage(bgImg, drawX, drawY, drawWidth, drawHeight);
                 }
-            } else {
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
 
             // Стикеры
@@ -885,8 +895,8 @@
                     // Выделение выбранного стикера
                     if (index === state.selectedElement && state.dragType === 'sticker') {
                         ctx.strokeStyle = '#014d77';
-                        ctx.lineWidth = 2;
-                        ctx.setLineDash([5, 5]);
+                        ctx.lineWidth = 6;
+                        ctx.setLineDash([15, 15]);
                         ctx.strokeRect(sticker.x - halfSize, sticker.y - halfSize, sticker.size, sticker.size);
                         ctx.setLineDash([]);
                     }
@@ -897,15 +907,15 @@
             if (state.textElements.length > 0) {
                 const textElement = state.textElements[0];
                 ctx.fillStyle = '#ffffff';
-                ctx.font = `${textElement.fontSize}px "Dancing Script"`;
+                ctx.font = `${textElement.fontSize}px "Great Vibes"`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.shadowColor = '#014d77';
-                ctx.shadowBlur = 8;
-                ctx.shadowOffsetX = 2;
-                ctx.shadowOffsetY = 2;
+                ctx.shadowBlur = 24;
+                ctx.shadowOffsetX = 6;
+                ctx.shadowOffsetY = 6;
                 
-                const lineHeight = textElement.fontSize * 1.2;
+                const lineHeight = textElement.fontSize * 1.3;
                 const startY = textElement.y - (textElement.lines.length - 1) * lineHeight / 2;
                 
                 textElement.lines.forEach((line, index) => {
@@ -917,13 +927,13 @@
                     const textWidth = getTextWidth(textElement);
                     const textHeight = textElement.lines.length * lineHeight;
                     ctx.strokeStyle = '#014d77';
-                    ctx.lineWidth = 2;
-                    ctx.setLineDash([5, 5]);
+                    ctx.lineWidth = 6;
+                    ctx.setLineDash([15, 15]);
                     ctx.strokeRect(
-                        textElement.x - textWidth/2 - 5, 
-                        startY - textElement.fontSize/2 - 5, 
-                        textWidth + 10, 
-                        textHeight + 10
+                        textElement.x - textWidth/2 - 15, 
+                        startY - textElement.fontSize/2 - 15, 
+                        textWidth + 30, 
+                        textHeight + 30
                     );
                     ctx.setLineDash([]);
                 }
@@ -935,8 +945,8 @@
 
             // Логотип - увеличенный размер с сохранением пропорций
             if (state.logo.complete && state.logo.naturalHeight !== 0) {
-                const logoSize = Math.min(80, canvas.width * 0.15); // Увеличиваем размер
-                const padding = 15;
+                const logoSize = Math.min(240, canvas.width * 0.15); // Увеличиваем размер для HQ
+                const padding = 45;
                 
                 // Сохраняем пропорции логотипа
                 const logoAspect = state.logo.naturalWidth / state.logo.naturalHeight;
@@ -956,39 +966,72 @@
             }
         }
 
-        function downloadCard() {
+        function downloadHighQualityCard() {
+            // Создаем временный канвас для скачивания в максимальном качестве
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d', { alpha: false });
+            
+            const { width, height } = config.orientations[state.orientation];
+            tempCanvas.width = width;
+            tempCanvas.height = height;
+            
+            // Устанавливаем высокое качество рендеринга
+            tempCtx.imageSmoothingEnabled = true;
+            tempCtx.imageSmoothingQuality = 'high';
+            
+            // Рендерим на временный канвас
+            renderToCanvas(tempCtx, tempCanvas.width, tempCanvas.height);
+            
+            // Создаем ссылку для скачивания
             const link = document.createElement('a');
-            link.download = 'новогодняя-открытка.png';
-            link.href = canvas.toDataURL('image/png');
+            link.download = 'новогодняя-открытка-hq.png';
+            link.href = tempCanvas.toDataURL('image/png', 1.0); // Максимальное качество PNG
             link.click();
         }
 
-        function clearCard() {
-            state.selectedBackground = null;
-            state.stickers = [];
-            state.textElements = [];
-            state.greetingText = '';
-            state.selectedElement = null;
-            state.dragType = null;
-            greetingTextInput.value = '';
-            stickerControls.style.display = 'none';
-            
-            document.querySelectorAll('.background-item, .sticker-item').forEach(item => {
-                item.classList.remove('active');
-            });
-            
-            // Выбираем первый фон по умолчанию
-            const firstBg = document.querySelector('.background-item');
-            if (firstBg) {
-                firstBg.classList.add('active');
-                state.selectedBackground = firstBg.dataset.background;
-            }
-            
-            renderCard();
-        }
+        function renderToCanvas(context, width, height) {
+            // Очищаем канвас
+            context.fillStyle = '#ffffff';
+            context.fillRect(0, 0, width, height);
 
-        // Запуск приложения
-        window.addEventListener('load', init);
-    </script>
-</body>
-</html>
+            // Фон
+            if (state.selectedBackground) {
+                const bgImg = imageCache.get(state.selectedBackground);
+                if (bgImg && bgImg.complete) {
+                    const imgRatio = bgImg.naturalWidth / bgImg.naturalHeight;
+                    const canvasRatio = width / height;
+                    
+                    let drawWidth, drawHeight, drawX, drawY;
+                    
+                    if (imgRatio > canvasRatio) {
+                        drawHeight = height;
+                        drawWidth = drawHeight * imgRatio;
+                        drawX = (width - drawWidth) / 2;
+                        drawY = 0;
+                    } else {
+                        drawWidth = width;
+                        drawHeight = drawWidth / imgRatio;
+                        drawX = 0;
+                        drawY = (height - drawHeight) / 2;
+                    }
+                    
+                    context.drawImage(bgImg, drawX, drawY, drawWidth, drawHeight);
+                }
+            }
+
+            // Стикеры
+            state.stickers.forEach(sticker => {
+                const img = imageCache.get(sticker.src);
+                if (img && img.complete) {
+                    const halfSize = sticker.size / 2;
+                    context.drawImage(img, sticker.x - halfSize, sticker.y - halfSize, sticker.size, sticker.size);
+                }
+            });
+
+            // Текст
+            if (state.textElements.length > 0) {
+                const textElement = state.textElements[0];
+                context.fillStyle = '#ffffff';
+                context.font = `${textElement.fontSize}px "Great Vibes"`;
+                context.textAlign = 'center';
+                context.textBaseline
