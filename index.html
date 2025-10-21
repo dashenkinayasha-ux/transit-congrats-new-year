@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Новогодний конструктор открыток</title>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Marck+Script&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary-color: #014d77;
@@ -19,11 +19,39 @@
         }
 
         body {
-            font-family: 'Playfair Display', serif;
-            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            font-family: 'Marck Script', cursive;
+            background: linear-gradient(135deg, #0a2a5e, #014d77);
             color: var(--text-color);
             min-height: 100vh;
             padding: 20px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Анимация снега */
+        .snowflakes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .snowflake {
+            position: absolute;
+            top: -10px;
+            color: white;
+            font-size: 1.5rem;
+            opacity: 0.8;
+            animation: fall linear infinite;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+            }
         }
 
         .container {
@@ -35,7 +63,7 @@
             text-align: center;
             margin-bottom: 30px;
             padding: 20px;
-            background: rgba(1, 77, 119, 0.8);
+            background: linear-gradient(135deg, #014d77, #40e0d0);
             border-radius: 15px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
         }
@@ -100,7 +128,7 @@
         .card-logo {
             position: absolute;
             top: 20px;
-            left: 20px;
+            right: 20px;
             max-width: 120px;
             max-height: 80px;
             z-index: 10;
@@ -116,6 +144,8 @@
             cursor: move;
             user-select: none;
             z-index: 5;
+            white-space: pre-line;
+            max-width: 80%;
         }
 
         .sticker {
@@ -123,6 +153,16 @@
             cursor: move;
             user-select: none;
             z-index: 5;
+            resize: both;
+            overflow: hidden;
+            min-width: 40px;
+            min-height: 40px;
+        }
+
+        .sticker img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
         }
 
         .controls {
@@ -145,7 +185,7 @@
             border-radius: 8px;
             border: none;
             background: rgba(255, 255, 255, 0.9);
-            font-family: 'Playfair Display', serif;
+            font-family: 'Marck Script', cursive;
             font-size: 1rem;
         }
 
@@ -184,20 +224,22 @@
             background-size: contain;
             background-repeat: no-repeat;
             background-position: center;
+            border: 2px solid transparent;
         }
 
-        .sticker-option:hover {
+        .sticker-option:hover, .sticker-option.active {
             transform: scale(1.1);
+            border-color: var(--accent-color);
         }
 
-        .text-position-buttons {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 5px;
+        .text-align-buttons {
+            display: flex;
+            gap: 10px;
             margin-top: 10px;
         }
 
-        .text-position-btn {
+        .text-align-btn {
+            flex: 1;
             padding: 8px;
             background: rgba(255, 255, 255, 0.2);
             border-radius: 5px;
@@ -206,7 +248,7 @@
             transition: all 0.3s ease;
         }
 
-        .text-position-btn.active {
+        .text-align-btn.active {
             background: var(--primary-color);
         }
 
@@ -215,6 +257,17 @@
             padding: 15px;
             font-size: 1.2rem;
             margin-top: 20px;
+        }
+
+        .resize-handle {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            bottom: 0;
+            right: 0;
+            cursor: nwse-resize;
         }
 
         @media (max-width: 768px) {
@@ -229,6 +282,8 @@
     </style>
 </head>
 <body>
+    <div class="snowflakes" id="snowflakes"></div>
+
     <div class="container">
         <header>
             <h1>Новогодний Конструктор Открыток</h1>
@@ -249,10 +304,7 @@
                     <div class="control-group">
                         <label for="background">Фон открытки</label>
                         <select id="background">
-                            <option value="bg1">Зимний лес</option>
-                            <option value="bg2">Новогодний город</option>
-                            <option value="bg3">Снежные горы</option>
-                            <option value="bg4">Праздничный декор</option>
+                            <!-- Фоны будут добавлены через JavaScript -->
                         </select>
                     </div>
 
@@ -262,23 +314,18 @@
                     </div>
 
                     <div class="control-group">
-                        <label>Расположение текста</label>
-                        <div class="text-position-buttons">
-                            <div class="text-position-btn active" data-position="center">Центр</div>
-                            <div class="text-position-btn" data-position="top">Верх</div>
-                            <div class="text-position-btn" data-position="bottom">Низ</div>
-                            <div class="text-position-btn" data-position="left">Слева</div>
-                            <div class="text-position-btn" data-position="right">Справа</div>
+                        <label>Выравнивание текста</label>
+                        <div class="text-align-buttons">
+                            <div class="text-align-btn active" data-align="center">По центру</div>
+                            <div class="text-align-btn" data-align="left">Слева</div>
+                            <div class="text-align-btn" data-align="right">Справа</div>
                         </div>
                     </div>
 
                     <div class="control-group">
                         <label>Добавить стикеры</label>
-                        <div class="sticker-gallery">
-                            <div class="sticker-option" data-sticker="snowflake" style="background-image: url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%2340e0d0\'><path d=\'M12 18c.714 0 1.37-.196 1.945-.525l2.78 2.78 1.414-1.414-2.78-2.78c.33-.575.526-1.232.526-1.945 0-2.206-1.794-4-4-4-.714 0-1.37.196-1.945.525l-2.78-2.78-1.414 1.414 2.78 2.78C8.196 10.63 8 11.286 8 12c0 2.206 1.794 4 4 4z\'/></svg>')"></div>
-                            <div class="sticker-option" data-sticker="tree" style="background-image: url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%23014d77\'><path d=\'M20 17v-6c0-1.1-.9-2-2-2H6c-1.1 0-2 .9-2 2v6H2v2h20v-2h-2zM6 11h12v6H6v-6z\'/></svg>')"></div>
-                            <div class="sticker-option" data-sticker="gift" style="background-image: url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%23ff6b6b\'><path d=\'M20 6h-2.18c.11-.31.18-.65.18-1 0-1.66-1.34-3-3-3-1.05 0-1.96.54-2.5 1.35l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM9 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm11 15H4v-2h16v2zm0-5H4V8h5.08L7 10.83 8.62 12 11 8.76l1-1.36 1 1.36L15.38 12 17 10.83 14.92 8H20v6z\'/></svg>')"></div>
-                            <div class="sticker-option" data-sticker="star" style="background-image: url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%23ffd700\'><path d=\'M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z\'/></svg>')"></div>
+                        <div class="sticker-gallery" id="sticker-gallery">
+                            <!-- Стикеры будут добавлены через JavaScript -->
                         </div>
                     </div>
                 </div>
@@ -289,7 +336,7 @@
             <div class="preview-container">
                 <div class="card-preview card-vertical">
                     <div class="card-background" id="card-bg">
-                        <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='80' viewBox='0 0 120 80'><rect width='120' height='80' fill='%23014d77'/><text x='60' y='45' font-family='Arial' font-size='14' fill='white' text-anchor='middle'>ЛОГОТИП</text></svg>" alt="Логотип" class="card-logo" id="card-logo">
+                        <img src="./images/logo3.png" alt="Логотип" class="card-logo" id="card-logo">
                         <div class="card-text" id="card-text">С Новым Годом!</div>
                     </div>
                 </div>
@@ -307,40 +354,113 @@
             const cardPreview = document.querySelector('.card-preview');
             const cardBg = document.getElementById('card-bg');
             const cardText = document.getElementById('card-text');
-            const textPositionBtns = document.querySelectorAll('.text-position-btn');
-            const stickerOptions = document.querySelectorAll('.sticker-option');
+            const cardLogo = document.getElementById('card-logo');
+            const textAlignBtns = document.querySelectorAll('.text-align-btn');
+            const stickerGallery = document.getElementById('sticker-gallery');
             const downloadBtn = document.getElementById('download-btn');
+            const snowflakesContainer = document.getElementById('snowflakes');
             
-            // Фоновые изображения
-            const backgrounds = {
-                bg1: 'linear-gradient(135deg, #1e3c72, #2a5298)',
-                bg2: 'linear-gradient(135deg, #0f2027, #203a43, #2c5364)',
-                bg3: 'linear-gradient(135deg, #667eea, #764ba2)',
-                bg4: 'linear-gradient(135deg, #f093fb, #f5576c)'
-            };
+            // Создание снежинок
+            function createSnowflakes() {
+                const snowflakeCount = 50;
+                for (let i = 0; i < snowflakeCount; i++) {
+                    const snowflake = document.createElement('div');
+                    snowflake.classList.add('snowflake');
+                    snowflake.innerHTML = '❄';
+                    snowflake.style.left = Math.random() * 100 + 'vw';
+                    snowflake.style.animationDuration = (Math.random() * 10 + 5) + 's';
+                    snowflake.style.animationDelay = Math.random() * 5 + 's';
+                    snowflake.style.opacity = Math.random() * 0.7 + 0.3;
+                    snowflake.style.fontSize = (Math.random() * 10 + 10) + 'px';
+                    snowflakesContainer.appendChild(snowflake);
+                }
+            }
+            
+            // Загрузка фонов
+            function loadBackgrounds() {
+                const backgrounds = [
+                    { id: 'bg1', name: 'Зимний пейзаж 1', url: './backgrounds/bg1.jpg' },
+                    { id: 'bg2', name: 'Зимний пейзаж 2', url: './backgrounds/bg2.jpg' },
+                    { id: 'bg3', name: 'Новогодний город', url: './backgrounds/bg3.jpg' },
+                    { id: 'bg4', name: 'Ёлка с шарами', url: './backgrounds/bg4.jpg' },
+                    { id: 'bg5', name: 'Снежный лес', url: './backgrounds/bg5.jpg' },
+                    { id: 'bg6', name: 'Праздничный декор', url: './backgrounds/bg6.jpg' },
+                    { id: 'bg7', name: 'Зимний вечер', url: './backgrounds/bg7.jpg' },
+                    { id: 'bg8', name: 'Новогоднее настроение', url: './backgrounds/bg8.jpg' }
+                ];
+                
+                backgrounds.forEach(bg => {
+                    const option = document.createElement('option');
+                    option.value = bg.id;
+                    option.textContent = bg.name;
+                    option.dataset.url = bg.url;
+                    backgroundSelect.appendChild(option);
+                });
+                
+                // Устанавливаем первый фон по умолчанию
+                if (backgrounds.length > 0) {
+                    cardBg.style.backgroundImage = `url(${backgrounds[0].url})`;
+                }
+            }
+            
+            // Загрузка стикеров
+            function loadStickers() {
+                const stickers = [
+                    { id: 'sticker1', name: 'Снеговик', url: './stickers/sticker1.png' },
+                    { id: 'sticker2', name: 'Дед Мороз', url: './stickers/sticker2.png' },
+                    { id: 'sticker3', name: 'Снежинка', url: './stickers/sticker3.png' },
+                    { id: 'sticker4', name: 'Подарок', url: './stickers/sticker4.png' },
+                    { id: 'sticker5', name: 'Ёлочный шар', url: './stickers/sticker5.png' },
+                    { id: 'sticker6', name: 'Олень', url: './stickers/sticker6.png' },
+                    { id: 'sticker7', name: 'Свеча', url: './stickers/sticker7.png' },
+                    { id: 'sticker8', name: 'Ёлка', url: './stickers/sticker8.png' }
+                ];
+                
+                stickers.forEach(sticker => {
+                    const stickerOption = document.createElement('div');
+                    stickerOption.classList.add('sticker-option');
+                    stickerOption.dataset.sticker = sticker.id;
+                    stickerOption.dataset.url = sticker.url;
+                    stickerOption.title = sticker.name;
+                    
+                    // Создаем изображение для предпросмотра стикера
+                    const img = document.createElement('img');
+                    img.src = sticker.url;
+                    img.alt = sticker.name;
+                    img.style.width = '100%';
+                    img.style.height = '100%';
+                    img.style.objectFit = 'contain';
+                    stickerOption.appendChild(img);
+                    
+                    stickerGallery.appendChild(stickerOption);
+                });
+            }
             
             // Инициализация
+            createSnowflakes();
+            loadBackgrounds();
+            loadStickers();
             updateCardOrientation();
-            updateBackground();
-            updateTextPosition('center');
+            updateTextAlign('center');
             
             // События
             orientationSelect.addEventListener('change', updateCardOrientation);
             backgroundSelect.addEventListener('change', updateBackground);
             greetingText.addEventListener('input', updateGreetingText);
             
-            textPositionBtns.forEach(btn => {
+            textAlignBtns.forEach(btn => {
                 btn.addEventListener('click', function() {
-                    textPositionBtns.forEach(b => b.classList.remove('active'));
+                    textAlignBtns.forEach(b => b.classList.remove('active'));
                     this.classList.add('active');
-                    updateTextPosition(this.dataset.position);
+                    updateTextAlign(this.dataset.align);
                 });
             });
             
-            stickerOptions.forEach(sticker => {
-                sticker.addEventListener('click', function() {
-                    addSticker(this.dataset.sticker);
-                });
+            stickerGallery.addEventListener('click', function(e) {
+                const stickerOption = e.target.closest('.sticker-option');
+                if (stickerOption) {
+                    addSticker(stickerOption.dataset.sticker, stickerOption.dataset.url);
+                }
             });
             
             downloadBtn.addEventListener('click', downloadCard);
@@ -357,38 +477,27 @@
             }
             
             function updateBackground() {
-                cardBg.style.background = backgrounds[backgroundSelect.value];
+                const selectedOption = backgroundSelect.options[backgroundSelect.selectedIndex];
+                cardBg.style.backgroundImage = `url(${selectedOption.dataset.url})`;
             }
             
             function updateGreetingText() {
                 cardText.textContent = greetingText.value || 'С Новым Годом!';
             }
             
-            function updateTextPosition(position) {
-                cardText.style.left = '50%';
-                cardText.style.top = '50%';
-                cardText.style.transform = 'translate(-50%, -50%)';
-                
-                switch(position) {
-                    case 'top':
-                        cardText.style.top = '20%';
-                        break;
-                    case 'bottom':
-                        cardText.style.top = '80%';
-                        break;
-                    case 'left':
-                        cardText.style.left = '20%';
-                        break;
-                    case 'right':
-                        cardText.style.left = '80%';
-                        break;
-                }
+            function updateTextAlign(align) {
+                cardText.style.textAlign = align;
             }
             
-            function addSticker(stickerType) {
+            function addSticker(stickerId, stickerUrl) {
                 const sticker = document.createElement('div');
                 sticker.className = 'sticker';
-                sticker.innerHTML = getStickerSVG(stickerType);
+                sticker.dataset.sticker = stickerId;
+                
+                const img = document.createElement('img');
+                img.src = stickerUrl;
+                img.alt = 'Стикер';
+                sticker.appendChild(img);
                 
                 // Начальная позиция в центре
                 sticker.style.left = '50%';
@@ -396,25 +505,15 @@
                 sticker.style.transform = 'translate(-50%, -50%)';
                 
                 // Случайный размер
-                const size = 60 + Math.random() * 40;
+                const size = 80 + Math.random() * 60;
                 sticker.style.width = `${size}px`;
                 sticker.style.height = `${size}px`;
                 
-                // Добавляем функциональность перетаскивания
+                // Добавляем функциональность перетаскивания и изменения размера
                 makeDraggable(sticker);
+                makeResizable(sticker);
                 
                 cardBg.appendChild(sticker);
-            }
-            
-            function getStickerSVG(type) {
-                const svgs = {
-                    snowflake: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#40e0d0"><path d="M12 18c.714 0 1.37-.196 1.945-.525l2.78 2.78 1.414-1.414-2.78-2.78c.33-.575.526-1.232.526-1.945 0-2.206-1.794-4-4-4-.714 0-1.37.196-1.945.525l-2.78-2.78-1.414 1.414 2.78 2.78C8.196 10.63 8 11.286 8 12c0 2.206 1.794 4 4 4z"/></svg>',
-                    tree: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#014d77"><path d="M20 17v-6c0-1.1-.9-2-2-2H6c-1.1 0-2 .9-2 2v6H2v2h20v-2h-2zM6 11h12v6H6v-6z"/></svg>',
-                    gift: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#ff6b6b"><path d="M20 6h-2.18c.11-.31.18-.65.18-1 0-1.66-1.34-3-3-3-1.05 0-1.96.54-2.5 1.35l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM9 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm11 15H4v-2h16v2zm0-5H4V8h5.08L7 10.83 8.62 12 11 8.76l1-1.36 1 1.36L15.38 12 17 10.83 14.92 8H20v6z"/></svg>',
-                    star: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#ffd700"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>'
-                };
-                
-                return svgs[type] || '';
             }
             
             function makeDraggable(element) {
@@ -424,6 +523,8 @@
                 element.ontouchstart = dragTouchStart;
                 
                 function dragMouseDown(e) {
+                    if (e.target.classList.contains('resize-handle')) return;
+                    
                     e.preventDefault();
                     pos3 = e.clientX;
                     pos4 = e.clientY;
@@ -432,6 +533,8 @@
                 }
                 
                 function dragTouchStart(e) {
+                    if (e.target.classList.contains('resize-handle')) return;
+                    
                     e.preventDefault();
                     const touch = e.touches[0];
                     pos3 = touch.clientX;
@@ -473,16 +576,80 @@
                 }
             }
             
+            function makeResizable(element) {
+                const handle = document.createElement('div');
+                handle.className = 'resize-handle';
+                element.appendChild(handle);
+                
+                let startX, startY, startWidth, startHeight;
+                
+                handle.addEventListener('mousedown', initResize);
+                handle.addEventListener('touchstart', initResizeTouch);
+                
+                function initResize(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    startWidth = parseInt(document.defaultView.getComputedStyle(element).width, 10);
+                    startHeight = parseInt(document.defaultView.getComputedStyle(element).height, 10);
+                    document.addEventListener('mousemove', resize);
+                    document.addEventListener('mouseup', stopResize);
+                }
+                
+                function initResizeTouch(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const touch = e.touches[0];
+                    startX = touch.clientX;
+                    startY = touch.clientY;
+                    startWidth = parseInt(document.defaultView.getComputedStyle(element).width, 10);
+                    startHeight = parseInt(document.defaultView.getComputedStyle(element).height, 10);
+                    document.addEventListener('touchmove', resizeTouch);
+                    document.addEventListener('touchend', stopResize);
+                }
+                
+                function resize(e) {
+                    const width = startWidth + (e.clientX - startX);
+                    const height = startHeight + (e.clientY - startY);
+                    if (width > 40 && height > 40) {
+                        element.style.width = width + 'px';
+                        element.style.height = height + 'px';
+                    }
+                }
+                
+                function resizeTouch(e) {
+                    const touch = e.touches[0];
+                    const width = startWidth + (touch.clientX - startX);
+                    const height = startHeight + (touch.clientY - startY);
+                    if (width > 40 && height > 40) {
+                        element.style.width = width + 'px';
+                        element.style.height = height + 'px';
+                    }
+                }
+                
+                function stopResize() {
+                    document.removeEventListener('mousemove', resize);
+                    document.removeEventListener('mouseup', stopResize);
+                    document.removeEventListener('touchmove', resizeTouch);
+                    document.removeEventListener('touchend', stopResize);
+                }
+            }
+            
             function downloadCard() {
                 html2canvas(cardPreview, {
-                    scale: 3, // Увеличиваем масштаб для высокого разрешения
+                    scale: 3,
                     useCORS: true,
-                    allowTaint: true
+                    allowTaint: false,
+                    backgroundColor: null
                 }).then(canvas => {
                     const link = document.createElement('a');
                     link.download = 'новогодняя-открытка.png';
                     link.href = canvas.toDataURL('image/png');
                     link.click();
+                }).catch(error => {
+                    console.error('Ошибка при создании изображения:', error);
+                    alert('Произошла ошибка при создании открытки. Попробуйте еще раз.');
                 });
             }
         });
