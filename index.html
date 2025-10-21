@@ -234,16 +234,19 @@
         @media (max-width: 768px) {
             .creator-section {
                 grid-template-columns: 1fr;
+                gap: 20px;
             }
             
             .controls {
                 order: 2;
                 max-height: 400px;
+                padding: 20px;
             }
             
             .preview-section {
                 order: 1;
                 min-height: 400px;
+                padding: 15px;
             }
             
             h1 {
@@ -254,12 +257,34 @@
                 font-size: 14px;
                 padding: 10px;
             }
+            
+            #cardCanvas {
+                max-height: 400px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 1.8em;
+            }
+            
+            .preview-section {
+                min-height: 350px;
+            }
+            
+            #cardCanvas {
+                max-height: 350px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🎄 Новогодний Конструктор Открыток 🎅</h1>
+        <h1>🎄 Создай новогоднюю открытку! 🎅</h1>
         
         <div class="creator-section">
             <div class="controls">
@@ -358,9 +383,7 @@
         // Загружаем логотип
         state.logo.src = 'logo3.png';
         state.logo.onload = () => {
-            // Устанавливаем фиксированные размеры для логотипа
-            state.logo.width = 80;
-            state.logo.height = 80;
+            console.log('Логотип загружен:', state.logo.width, 'x', state.logo.height);
         };
 
         // Элементы DOM
@@ -388,8 +411,19 @@
             const { width, height } = config.orientations[state.orientation];
             canvas.width = width;
             canvas.height = height;
-            canvas.style.width = `${width}px`;
-            canvas.style.height = `${height}px`;
+            
+            // Для мобильных устройств ограничиваем максимальный размер
+            const maxWidth = window.innerWidth * 0.9;
+            const maxHeight = window.innerHeight * 0.6;
+            
+            if (width > maxWidth || height > maxHeight) {
+                const scale = Math.min(maxWidth / width, maxHeight / height);
+                canvas.style.width = `${width * scale}px`;
+                canvas.style.height = `${height * scale}px`;
+            } else {
+                canvas.style.width = `${width}px`;
+                canvas.style.height = `${height}px`;
+            }
         }
 
         function loadBackgrounds() {
@@ -477,6 +511,12 @@
                     renderCard();
                 }
             });
+
+            // Ресайз окна
+            window.addEventListener('resize', () => {
+                setupCanvas();
+                renderCard();
+            });
         }
 
         function updateTextElement() {
@@ -487,12 +527,39 @@
                     x: canvas.width / 2,
                     y: canvas.height / 2,
                     fontSize: 24,
-                    id: 'text-' + Date.now()
+                    id: 'text-' + Date.now(),
+                    lines: []
                 });
             } else {
                 // Обновляем существующий текст
                 state.textElements[0].text = state.greetingText;
             }
+            // Обновляем линии текста
+            updateTextLines();
+        }
+
+        function updateTextLines() {
+            if (state.textElements.length === 0) return;
+            
+            const textElement = state.textElements[0];
+            const maxWidth = canvas.width * 0.8;
+            const words = textElement.text.split(' ');
+            const lines = [];
+            let currentLine = words[0];
+
+            for (let i = 1; i < words.length; i++) {
+                const word = words[i];
+                ctx.font = `${textElement.fontSize}px "Caveat"`;
+                const width = ctx.measureText(currentLine + ' ' + word).width;
+                if (width < maxWidth) {
+                    currentLine += ' ' + word;
+                } else {
+                    lines.push(currentLine);
+                    currentLine = word;
+                }
+            }
+            lines.push(currentLine);
+            textElement.lines = lines;
         }
 
         function getCanvasCoordinates(e) {
@@ -511,9 +578,8 @@
             // Сначала проверяем клик по тексту
             if (state.textElements.length > 0) {
                 const textElement = state.textElements[0];
-                ctx.font = `${textElement.fontSize}px "Caveat"`;
-                const textWidth = ctx.measureText(textElement.text).width;
-                const textHeight = textElement.fontSize;
+                const textHeight = textElement.fontSize * textElement.lines.length;
+                const textWidth = getTextWidth(textElement);
                 
                 if (coords.x >= textElement.x - textWidth/2 && coords.x <= textElement.x + textWidth/2 &&
                     coords.y >= textElement.y - textHeight/2 && coords.y <= textElement.y + textHeight/2) {
@@ -543,6 +609,16 @@
             }
         }
 
+        function getTextWidth(textElement) {
+            let maxWidth = 0;
+            ctx.font = `${textElement.fontSize}px "Caveat"`;
+            textElement.lines.forEach(line => {
+                const width = ctx.measureText(line).width;
+                if (width > maxWidth) maxWidth = width;
+            });
+            return maxWidth;
+        }
+
         function drag(e) {
             if (!state.isDragging || state.selectedElement === null) return;
             
@@ -565,9 +641,8 @@
                 textElement.y = coords.y - state.dragOffset.y;
                 
                 // Ограничиваем движение текста
-                ctx.font = `${textElement.fontSize}px "Caveat"`;
-                const textWidth = ctx.measureText(textElement.text).width;
-                const textHeight = textElement.fontSize;
+                const textWidth = getTextWidth(textElement);
+                const textHeight = textElement.fontSize * textElement.lines.length;
                 
                 textElement.x = Math.max(textWidth/2, Math.min(canvas.width - textWidth/2, textElement.x));
                 textElement.y = Math.max(textHeight/2, Math.min(canvas.height - textHeight/2, textElement.y));
@@ -596,6 +671,7 @@
                     const textElement = state.textElements[0];
                     textElement.fontSize = Math.max(16, Math.min(48, textElement.fontSize + delta));
                     sizeSlider.value = textElement.fontSize;
+                    updateTextLines();
                 }
                 
                 renderCard();
@@ -637,6 +713,7 @@
                     const textElement = state.textElements[0];
                     textElement.fontSize = Math.max(16, Math.min(48, textElement.fontSize * scale));
                     sizeSlider.value = textElement.fontSize;
+                    updateTextLines();
                 }
                 
                 state.initialDistance = currentDistance;
@@ -665,9 +742,8 @@
                 x = element.x;
                 y = element.y;
             } else if (state.dragType === 'text') {
-                ctx.font = `${element.fontSize}px "Caveat"`;
-                width = ctx.measureText(element.text).width;
-                height = element.fontSize;
+                width = getTextWidth(element);
+                height = element.fontSize * element.lines.length;
                 x = element.x;
                 y = element.y;
             }
@@ -754,28 +830,12 @@
         function renderCard() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Фон
+            // Фон (сохраняем пропорции)
             if (state.selectedBackground) {
                 const bgImg = imageCache.get(state.selectedBackground);
                 if (bgImg && bgImg.complete) {
-                    const imgRatio = bgImg.width / bgImg.height;
-                    const canvasRatio = canvas.width / canvas.height;
-                    
-                    let drawWidth, drawHeight, offsetX, offsetY;
-                    
-                    if (imgRatio > canvasRatio) {
-                        drawHeight = canvas.height;
-                        drawWidth = bgImg.width * (canvas.height / bgImg.height);
-                        offsetX = (canvas.width - drawWidth) / 2;
-                        offsetY = 0;
-                    } else {
-                        drawWidth = canvas.width;
-                        drawHeight = bgImg.height * (canvas.width / bgImg.width);
-                        offsetX = 0;
-                        offsetY = (canvas.height - drawHeight) / 2;
-                    }
-                    
-                    ctx.drawImage(bgImg, offsetX, offsetY, drawWidth, drawHeight);
+                    // Заполняем весь канвас без искажений
+                    ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
                 }
             } else {
                 ctx.fillStyle = '#ffffff';
@@ -800,7 +860,7 @@
                 }
             });
 
-            // Текст
+            // Текст с переносами
             if (state.textElements.length > 0) {
                 const textElement = state.textElements[0];
                 ctx.fillStyle = '#ffffff';
@@ -812,16 +872,26 @@
                 ctx.shadowOffsetX = 2;
                 ctx.shadowOffsetY = 2;
                 
-                ctx.fillText(textElement.text, textElement.x, textElement.y);
+                const lineHeight = textElement.fontSize * 1.2;
+                const startY = textElement.y - (textElement.lines.length - 1) * lineHeight / 2;
+                
+                textElement.lines.forEach((line, index) => {
+                    ctx.fillText(line, textElement.x, startY + index * lineHeight);
+                });
                 
                 // Выделение выбранного текста
                 if (state.selectedElement === 0 && state.dragType === 'text') {
-                    const textWidth = ctx.measureText(textElement.text).width;
-                    const textHeight = textElement.fontSize;
+                    const textWidth = getTextWidth(textElement);
+                    const textHeight = textElement.lines.length * lineHeight;
                     ctx.strokeStyle = '#014d77';
                     ctx.lineWidth = 2;
                     ctx.setLineDash([5, 5]);
-                    ctx.strokeRect(textElement.x - textWidth/2, textElement.y - textHeight/2, textWidth, textHeight);
+                    ctx.strokeRect(
+                        textElement.x - textWidth/2 - 5, 
+                        startY - textElement.fontSize/2 - 5, 
+                        textWidth + 10, 
+                        textHeight + 10
+                    );
                     ctx.setLineDash([]);
                 }
                 
@@ -832,9 +902,23 @@
 
             // Логотип (фиксированный размер без растягивания)
             if (state.logo.complete && state.logo.naturalHeight !== 0) {
-                const logoSize = 80;
+                const logoSize = 60; // Фиксированный размер
                 const padding = 10;
-                ctx.drawImage(state.logo, canvas.width - logoSize - padding, padding, logoSize, logoSize);
+                // Сохраняем пропорции логотипа
+                const logoAspect = state.logo.naturalWidth / state.logo.naturalHeight;
+                let drawWidth, drawHeight;
+                
+                if (logoAspect > 1) {
+                    // Горизонтальный логотип
+                    drawWidth = logoSize;
+                    drawHeight = logoSize / logoAspect;
+                } else {
+                    // Вертикальный логотип
+                    drawHeight = logoSize;
+                    drawWidth = logoSize * logoAspect;
+                }
+                
+                ctx.drawImage(state.logo, canvas.width - drawWidth - padding, padding, drawWidth, drawHeight);
             }
         }
 
@@ -874,4 +958,3 @@
     </script>
 </body>
 </html>
-
