@@ -128,15 +128,16 @@
             position: absolute;
             top: 20px;
             right: 20px;
-            max-width: 120px;
-            max-height: 80px;
+            width: 120px;
+            height: 80px;
+            object-fit: contain;
             z-index: 10;
         }
 
         .card-text {
             position: absolute;
             color: var(--text-color);
-            font-size: 1.5rem;
+            font-size: 24px;
             text-align: center;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
             padding: 10px;
@@ -144,12 +145,12 @@
             user-select: none;
             z-index: 5;
             white-space: pre-line;
-            resize: both;
-            overflow: hidden;
-            min-width: 100px;
-            min-height: 50px;
             background: rgba(1, 77, 119, 0.3);
             border-radius: 8px;
+            min-width: 150px;
+            min-height: 60px;
+            resize: both;
+            overflow: auto;
         }
 
         .sticker {
@@ -157,10 +158,8 @@
             cursor: move;
             user-select: none;
             z-index: 5;
-            resize: both;
-            overflow: hidden;
-            min-width: 40px;
-            min-height: 40px;
+            min-width: 50px;
+            min-height: 50px;
         }
 
         .sticker img {
@@ -231,7 +230,7 @@
             padding: 5px;
         }
 
-        .sticker-option:hover, .sticker-option.active {
+        .sticker-option:hover {
             transform: scale(1.1);
             border-color: var(--accent-color);
         }
@@ -304,12 +303,12 @@
 
         .resize-handle {
             position: absolute;
-            width: 12px;
-            height: 12px;
+            width: 15px;
+            height: 15px;
             background: var(--accent-color);
             border-radius: 50%;
-            bottom: 2px;
-            right: 2px;
+            bottom: -5px;
+            right: -5px;
             cursor: nwse-resize;
             z-index: 10;
         }
@@ -389,7 +388,7 @@
             <div class="preview-container">
                 <div class="card-preview card-vertical">
                     <div class="card-background" id="card-bg">
-                        <!-- Логотип и текст будут добавлены динамически -->
+                        <!-- Элементы будут добавлены динамически -->
                     </div>
                 </div>
             </div>
@@ -399,415 +398,292 @@
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Данные согласно вашему формату
+            // Данные файлов
             const appData = {
-                backgrounds: [
-                    'bg1.jpg', 'bg2.jpg', 'bg3.jpg', 'bg4.jpg',
-                    'bg5.jpg', 'bg6.jpg', 'bg7.jpg', 'bg8.jpg'
-                ],
-                stickers: [
-                    'sticker1.png', 'sticker2.png', 'sticker3.png', 'sticker4.png',
-                    'sticker5.png', 'sticker6.png', 'sticker7.png', 'sticker8.png'
-                ],
+                backgrounds: ['bg1.jpg', 'bg2.jpg', 'bg3.jpg', 'bg4.jpg', 'bg5.jpg', 'bg6.jpg', 'bg7.jpg', 'bg8.jpg'],
+                stickers: ['sticker1.png', 'sticker2.png', 'sticker3.png', 'sticker4.png', 'sticker5.png', 'sticker6.png', 'sticker7.png', 'sticker8.png'],
                 logo: 'logo3.png'
             };
 
             // Элементы DOM
-            const orientationSelect = document.getElementById('orientation');
-            const backgroundSelect = document.getElementById('background');
-            const greetingText = document.getElementById('greeting-text');
-            const cardPreview = document.querySelector('.card-preview');
-            const cardBg = document.getElementById('card-bg');
-            const textAlignBtns = document.querySelectorAll('.text-align-btn');
-            const fontBtns = document.querySelectorAll('.font-btn');
-            const stickerGallery = document.getElementById('sticker-gallery');
-            const downloadBtn = document.getElementById('download-btn');
-            const snowflakesContainer = document.getElementById('snowflakes');
-            
+            const elements = {
+                orientation: document.getElementById('orientation'),
+                background: document.getElementById('background'),
+                greetingText: document.getElementById('greeting-text'),
+                cardPreview: document.querySelector('.card-preview'),
+                cardBg: document.getElementById('card-bg'),
+                textAlignBtns: document.querySelectorAll('.text-align-btn'),
+                fontBtns: document.querySelectorAll('.font-btn'),
+                stickerGallery: document.getElementById('sticker-gallery'),
+                downloadBtn: document.getElementById('download-btn'),
+                snowflakes: document.getElementById('snowflakes')
+            };
+
             let currentTextElement = null;
-            let currentLogo = null;
-            
+
             // Создание снежинок
             function createSnowflakes() {
-                const snowflakeCount = 50;
-                for (let i = 0; i < snowflakeCount; i++) {
+                for (let i = 0; i < 50; i++) {
                     const snowflake = document.createElement('div');
-                    snowflake.classList.add('snowflake');
+                    snowflake.className = 'snowflake';
                     snowflake.innerHTML = '❄';
                     snowflake.style.left = Math.random() * 100 + 'vw';
                     snowflake.style.animationDuration = (Math.random() * 10 + 5) + 's';
                     snowflake.style.animationDelay = Math.random() * 5 + 's';
                     snowflake.style.opacity = Math.random() * 0.7 + 0.3;
-                    snowflake.style.fontSize = (Math.random() * 10 + 10) + 'px';
-                    snowflakesContainer.appendChild(snowflake);
+                    elements.snowflakes.appendChild(snowflake);
                 }
             }
-            
+
             // Загрузка фонов
             function loadBackgrounds() {
                 appData.backgrounds.forEach((bg, index) => {
                     const option = document.createElement('option');
-                    option.value = `bg${index + 1}`;
+                    option.value = bg;
                     option.textContent = `Фон ${index + 1}`;
-                    option.dataset.url = `./backgrounds/${bg}`;
-                    backgroundSelect.appendChild(option);
+                    elements.background.appendChild(option);
                 });
                 
-                // Устанавливаем первый фон по умолчанию
-                if (appData.backgrounds.length > 0) {
-                    cardBg.style.backgroundImage = `url(./backgrounds/${appData.backgrounds[0]})`;
-                }
+                // Устанавливаем первый фон
+                updateBackground();
             }
-            
+
             // Загрузка стикеров
             function loadStickers() {
                 appData.stickers.forEach((sticker, index) => {
                     const stickerOption = document.createElement('div');
-                    stickerOption.classList.add('sticker-option');
-                    stickerOption.dataset.sticker = `sticker${index + 1}`;
-                    stickerOption.dataset.url = `./stickers/${sticker}`;
+                    stickerOption.className = 'sticker-option';
                     stickerOption.title = `Стикер ${index + 1}`;
                     
                     const img = document.createElement('img');
                     img.src = `./stickers/${sticker}`;
                     img.alt = `Стикер ${index + 1}`;
-                    img.onerror = function() {
-                        console.error('Ошибка загрузки стикера:', sticker);
-                        stickerOption.innerHTML = '🎄';
-                        stickerOption.style.display = 'flex';
-                        stickerOption.style.alignItems = 'center';
-                        stickerOption.style.justifyContent = 'center';
-                        stickerOption.style.fontSize = '24px';
-                    };
                     stickerOption.appendChild(img);
                     
-                    stickerGallery.appendChild(stickerOption);
+                    stickerOption.addEventListener('click', () => addSticker(sticker));
+                    elements.stickerGallery.appendChild(stickerOption);
                 });
             }
-            
+
             // Загрузка логотипа
             function loadLogo() {
                 const logo = document.createElement('img');
                 logo.className = 'card-logo';
                 logo.src = `./images/${appData.logo}`;
                 logo.alt = 'Логотип';
-                logo.onerror = function() {
-                    console.error('Ошибка загрузки логотипа:', appData.logo);
-                    // Создаем заглушку для логотипа
-                    logo.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="60" viewBox="0 0 120 60"><rect width="120" height="60" fill="%23014d77" rx="10"/><text x="60" y="35" font-family="Arial" font-size="14" fill="white" text-anchor="middle">ЛОГОТИП</text></svg>';
-                };
-                
-                cardBg.appendChild(logo);
-                currentLogo = logo;
+                elements.cardBg.appendChild(logo);
             }
-            
+
             // Создание текстового элемента
             function createTextElement() {
                 const textElement = document.createElement('div');
                 textElement.className = 'card-text';
-                textElement.textContent = greetingText.value;
-                textElement.style.fontFamily = 'Marck Script, cursive';
-                textElement.style.textAlign = 'center';
-                
-                // Начальная позиция
+                textElement.textContent = elements.greetingText.value;
                 textElement.style.left = '50%';
                 textElement.style.top = '50%';
                 textElement.style.transform = 'translate(-50%, -50%)';
                 
-                // Добавляем функциональность перетаскивания и изменения размера
                 makeDraggable(textElement);
                 makeResizable(textElement);
                 
-                cardBg.appendChild(textElement);
+                elements.cardBg.appendChild(textElement);
                 currentTextElement = textElement;
-                return textElement;
             }
-            
+
+            // Функции обновления
+            function updateCardOrientation() {
+                const isVertical = elements.orientation.value === 'vertical';
+                elements.cardPreview.className = `card-preview ${isVertical ? 'card-vertical' : 'card-horizontal'}`;
+            }
+
+            function updateBackground() {
+                const selectedBg = elements.background.value;
+                elements.cardBg.style.backgroundImage = `url(./backgrounds/${selectedBg})`;
+            }
+
+            function updateGreetingText() {
+                if (currentTextElement) {
+                    currentTextElement.textContent = elements.greetingText.value;
+                }
+            }
+
+            function updateTextAlign(align) {
+                if (currentTextElement) {
+                    currentTextElement.style.textAlign = align;
+                }
+            }
+
+            function updateTextFont(font) {
+                if (currentTextElement) {
+                    currentTextElement.style.fontFamily = font === 'Marck Script' ? "'Marck Script', cursive" :
+                                                       font === 'Caveat' ? "'Caveat', cursive" :
+                                                       "'Bad Script', cursive";
+                }
+            }
+
+            // Добавление стикера
+            function addSticker(stickerName) {
+                const sticker = document.createElement('div');
+                sticker.className = 'sticker';
+                
+                const img = document.createElement('img');
+                img.src = `./stickers/${stickerName}`;
+                img.alt = 'Стикер';
+                sticker.appendChild(img);
+                
+                sticker.style.left = '50%';
+                sticker.style.top = '50%';
+                sticker.style.transform = 'translate(-50%, -50%)';
+                sticker.style.width = '80px';
+                sticker.style.height = '80px';
+                
+                makeDraggable(sticker);
+                makeResizable(sticker);
+                
+                elements.cardBg.appendChild(sticker);
+            }
+
+            // Функции перетаскивания и изменения размера
+            function makeDraggable(element) {
+                let isDragging = false;
+                let startX, startY, initialX, initialY;
+
+                element.addEventListener('mousedown', startDrag);
+                element.addEventListener('touchstart', startDragTouch);
+
+                function startDrag(e) {
+                    isDragging = true;
+                    startX = e.clientX || e.touches[0].clientX;
+                    startY = e.clientY || e.touches[0].clientY;
+                    initialX = element.offsetLeft;
+                    initialY = element.offsetTop;
+                    
+                    document.addEventListener('mousemove', drag);
+                    document.addEventListener('touchmove', drag);
+                    document.addEventListener('mouseup', stopDrag);
+                    document.addEventListener('touchend', stopDrag);
+                }
+
+                function drag(e) {
+                    if (!isDragging) return;
+                    e.preventDefault();
+                    
+                    const currentX = e.clientX || e.touches[0].clientX;
+                    const currentY = e.clientY || e.touches[0].clientY;
+                    
+                    const deltaX = currentX - startX;
+                    const deltaY = currentY - startY;
+                    
+                    element.style.left = (initialX + deltaX) + 'px';
+                    element.style.top = (initialY + deltaY) + 'px';
+                    element.style.transform = 'none';
+                }
+
+                function stopDrag() {
+                    isDragging = false;
+                    document.removeEventListener('mousemove', drag);
+                    document.removeEventListener('touchmove', drag);
+                }
+
+                function startDragTouch(e) {
+                    startDrag(e);
+                }
+            }
+
+            function makeResizable(element) {
+                const handle = document.createElement('div');
+                handle.className = 'resize-handle';
+                element.appendChild(handle);
+
+                let isResizing = false;
+                let startX, startY, startWidth, startHeight;
+
+                handle.addEventListener('mousedown', startResize);
+                handle.addEventListener('touchstart', startResizeTouch);
+
+                function startResize(e) {
+                    isResizing = true;
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    startWidth = parseInt(element.offsetWidth);
+                    startHeight = parseInt(element.offsetHeight);
+                    
+                    document.addEventListener('mousemove', resize);
+                    document.addEventListener('mouseup', stopResize);
+                }
+
+                function resize(e) {
+                    if (!isResizing) return;
+                    
+                    const width = startWidth + (e.clientX - startX);
+                    const height = startHeight + (e.clientY - startY);
+                    
+                    if (width > 50 && height > 30) {
+                        element.style.width = width + 'px';
+                        element.style.height = height + 'px';
+                        
+                        // Меняем размер шрифта для текста
+                        if (element.classList.contains('card-text')) {
+                            const baseSize = 24; // начальный размер шрифта
+                            const scale = Math.min(width / 200, height / 80);
+                            element.style.fontSize = (baseSize * scale) + 'px';
+                        }
+                    }
+                }
+
+                function stopResize() {
+                    isResizing = false;
+                    document.removeEventListener('mousemove', resize);
+                }
+
+                function startResizeTouch(e) {
+                    startResize(e);
+                }
+            }
+
+            // Скачивание открытки
+            function downloadCard() {
+                html2canvas(elements.cardPreview, {
+                    scale: 3,
+                    useCORS: true,
+                    allowTaint: false
+                }).then(canvas => {
+                    const link = document.createElement('a');
+                    link.download = 'новогодняя-открытка.png';
+                    link.href = canvas.toDataURL();
+                    link.click();
+                });
+            }
+
             // Инициализация
             createSnowflakes();
             loadBackgrounds();
             loadStickers();
             loadLogo();
             createTextElement();
-            updateCardOrientation();
-            
+
             // События
-            orientationSelect.addEventListener('change', updateCardOrientation);
-            backgroundSelect.addEventListener('change', updateBackground);
-            greetingText.addEventListener('input', updateGreetingText);
-            
-            textAlignBtns.forEach(btn => {
+            elements.orientation.addEventListener('change', updateCardOrientation);
+            elements.background.addEventListener('change', updateBackground);
+            elements.greetingText.addEventListener('input', updateGreetingText);
+            elements.downloadBtn.addEventListener('click', downloadCard);
+
+            elements.textAlignBtns.forEach(btn => {
                 btn.addEventListener('click', function() {
-                    textAlignBtns.forEach(b => b.classList.remove('active'));
+                    elements.textAlignBtns.forEach(b => b.classList.remove('active'));
                     this.classList.add('active');
                     updateTextAlign(this.dataset.align);
                 });
             });
-            
-            fontBtns.forEach(btn => {
+
+            elements.fontBtns.forEach(btn => {
                 btn.addEventListener('click', function() {
-                    fontBtns.forEach(b => b.classList.remove('active'));
+                    elements.fontBtns.forEach(b => b.classList.remove('active'));
                     this.classList.add('active');
                     updateTextFont(this.dataset.font);
                 });
             });
-            
-            stickerGallery.addEventListener('click', function(e) {
-                const stickerOption = e.target.closest('.sticker-option');
-                if (stickerOption) {
-                    addSticker(stickerOption.dataset.sticker, stickerOption.dataset.url);
-                }
-            });
-            
-            downloadBtn.addEventListener('click', downloadCard);
-            
-            // Функции
-            function updateCardOrientation() {
-                if (orientationSelect.value === 'vertical') {
-                    cardPreview.classList.remove('card-horizontal');
-                    cardPreview.classList.add('card-vertical');
-                } else {
-                    cardPreview.classList.remove('card-vertical');
-                    cardPreview.classList.add('card-horizontal');
-                }
-            }
-            
-            function updateBackground() {
-                const selectedOption = backgroundSelect.options[backgroundSelect.selectedIndex];
-                if (selectedOption && selectedOption.dataset.url) {
-                    cardBg.style.backgroundImage = `url(${selectedOption.dataset.url})`;
-                }
-            }
-            
-            function updateGreetingText() {
-                if (currentTextElement) {
-                    currentTextElement.textContent = greetingText.value;
-                }
-            }
-            
-            function updateTextAlign(align) {
-                if (currentTextElement) {
-                    currentTextElement.style.textAlign = align;
-                }
-            }
-            
-            function updateTextFont(font) {
-                if (currentTextElement) {
-                    switch(font) {
-                        case 'Marck Script':
-                            currentTextElement.style.fontFamily = 'Marck Script, cursive';
-                            break;
-                        case 'Caveat':
-                            currentTextElement.style.fontFamily = 'Caveat, cursive';
-                            break;
-                        case 'Bad Script':
-                            currentTextElement.style.fontFamily = 'Bad Script, cursive';
-                            break;
-                    }
-                }
-            }
-            
-            function addSticker(stickerId, stickerUrl) {
-                const sticker = document.createElement('div');
-                sticker.className = 'sticker';
-                sticker.dataset.sticker = stickerId;
-                
-                const img = document.createElement('img');
-                img.src = stickerUrl;
-                img.alt = 'Стикер';
-                img.onerror = function() {
-                    console.error('Ошибка загрузки стикера:', stickerUrl);
-                    sticker.innerHTML = '🎁';
-                    sticker.style.display = 'flex';
-                    sticker.style.alignItems = 'center';
-                    sticker.style.justifyContent = 'center';
-                    sticker.style.fontSize = '32px';
-                    sticker.style.backgroundColor = 'rgba(255,255,255,0.8)';
-                    sticker.style.borderRadius = '10px';
-                };
-                sticker.appendChild(img);
-                
-                // Начальная позиция в центре
-                sticker.style.left = '50%';
-                sticker.style.top = '50%';
-                sticker.style.transform = 'translate(-50%, -50%)';
-                
-                // Случайный размер
-                const size = 80 + Math.random() * 60;
-                sticker.style.width = `${size}px`;
-                sticker.style.height = `${size}px`;
-                
-                // Добавляем функциональность перетаскивания и изменения размера
-                makeDraggable(sticker);
-                makeResizable(sticker);
-                
-                cardBg.appendChild(sticker);
-            }
-            
-            function makeDraggable(element) {
-                let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-                let isResizing = false;
-                
-                element.addEventListener('mousedown', dragMouseDown);
-                element.addEventListener('touchstart', dragTouchStart);
-                
-                function dragMouseDown(e) {
-                    if (e.target.classList.contains('resize-handle')) {
-                        isResizing = true;
-                        return;
-                    }
-                    isResizing = false;
-                    
-                    e.preventDefault();
-                    pos3 = e.clientX;
-                    pos4 = e.clientY;
-                    document.addEventListener('mouseup', closeDragElement);
-                    document.addEventListener('mousemove', elementDrag);
-                }
-                
-                function dragTouchStart(e) {
-                    if (e.target.classList.contains('resize-handle')) {
-                        isResizing = true;
-                        return;
-                    }
-                    isResizing = false;
-                    
-                    e.preventDefault();
-                    const touch = e.touches[0];
-                    pos3 = touch.clientX;
-                    pos4 = touch.clientY;
-                    document.addEventListener('touchend', closeDragElement);
-                    document.addEventListener('touchmove', elementDragTouch);
-                }
-                
-                function elementDrag(e) {
-                    if (isResizing) return;
-                    
-                    e.preventDefault();
-                    pos1 = pos3 - e.clientX;
-                    pos2 = pos4 - e.clientY;
-                    pos3 = e.clientX;
-                    pos4 = e.clientY;
-                    
-                    element.style.top = (element.offsetTop - pos2) + "px";
-                    element.style.left = (element.offsetLeft - pos1) + "px";
-                    element.style.transform = 'none';
-                }
-                
-                function elementDragTouch(e) {
-                    if (isResizing) return;
-                    
-                    e.preventDefault();
-                    const touch = e.touches[0];
-                    pos1 = pos3 - touch.clientX;
-                    pos2 = pos4 - touch.clientY;
-                    pos3 = touch.clientX;
-                    pos4 = touch.clientY;
-                    
-                    element.style.top = (element.offsetTop - pos2) + "px";
-                    element.style.left = (element.offsetLeft - pos1) + "px";
-                    element.style.transform = 'none';
-                }
-                
-                function closeDragElement() {
-                    document.removeEventListener('mouseup', closeDragElement);
-                    document.removeEventListener('mousemove', elementDrag);
-                    document.removeEventListener('touchend', closeDragElement);
-                    document.removeEventListener('touchmove', elementDragTouch);
-                }
-            }
-            
-            function makeResizable(element) {
-                const handle = document.createElement('div');
-                handle.className = 'resize-handle';
-                element.appendChild(handle);
-                
-                let startX, startY, startWidth, startHeight;
-                
-                handle.addEventListener('mousedown', initResize);
-                handle.addEventListener('touchstart', initResizeTouch);
-                
-                function initResize(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    startX = e.clientX;
-                    startY = e.clientY;
-                    startWidth = parseInt(document.defaultView.getComputedStyle(element).width, 10);
-                    startHeight = parseInt(document.defaultView.getComputedStyle(element).height, 10);
-                    document.addEventListener('mousemove', resize);
-                    document.addEventListener('mouseup', stopResize);
-                }
-                
-                function initResizeTouch(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const touch = e.touches[0];
-                    startX = touch.clientX;
-                    startY = touch.clientY;
-                    startWidth = parseInt(document.defaultView.getComputedStyle(element).width, 10);
-                    startHeight = parseInt(document.defaultView.getComputedStyle(element).height, 10);
-                    document.addEventListener('touchmove', resizeTouch);
-                    document.addEventListener('touchend', stopResize);
-                }
-                
-                function resize(e) {
-                    const width = startWidth + (e.clientX - startX);
-                    const height = startHeight + (e.clientY - startY);
-                    if (width > 40 && height > 40) {
-                        element.style.width = width + 'px';
-                        element.style.height = height + 'px';
-                        
-                        // Для текста также меняем размер шрифта
-                        if (element.classList.contains('card-text')) {
-                            const baseSize = 1.5;
-                            const scale = Math.min(width / 200, height / 100);
-                            element.style.fontSize = (baseSize * scale) + 'rem';
-                        }
-                    }
-                }
-                
-                function resizeTouch(e) {
-                    const touch = e.touches[0];
-                    const width = startWidth + (touch.clientX - startX);
-                    const height = startHeight + (touch.clientY - startY);
-                    if (width > 40 && height > 40) {
-                        element.style.width = width + 'px';
-                        element.style.height = height + 'px';
-                        
-                        if (element.classList.contains('card-text')) {
-                            const baseSize = 1.5;
-                            const scale = Math.min(width / 200, height / 100);
-                            element.style.fontSize = (baseSize * scale) + 'rem';
-                        }
-                    }
-                }
-                
-                function stopResize() {
-                    document.removeEventListener('mousemove', resize);
-                    document.removeEventListener('mouseup', stopResize);
-                    document.removeEventListener('touchmove', resizeTouch);
-                    document.removeEventListener('touchend', stopResize);
-                }
-            }
-            
-            function downloadCard() {
-                html2canvas(cardPreview, {
-                    scale: 3,
-                    useCORS: true,
-                    allowTaint: false,
-                    backgroundColor: null
-                }).then(canvas => {
-                    const link = document.createElement('a');
-                    link.download = 'новогодняя-открытка.png';
-                    link.href = canvas.toDataURL('image/png');
-                    link.click();
-                }).catch(error => {
-                    console.error('Ошибка при создании изображения:', error);
-                    alert('Произошла ошибка при создании открытки. Попробуйте еще раз.');
-                });
-            }
         });
     </script>
 </body>
 </html>
-
