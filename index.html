@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Новогодний Конструктор Открыток</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Marck+Script&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Mountains+of+Christmas:wght@700&display=swap');
         
         * {
             margin: 0;
@@ -14,7 +14,7 @@
         }
 
         body {
-            font-family: 'Caveat', cursive;
+            font-family: 'Dancing Script', cursive;
             background: url('new-year-bg.jpg') fixed;
             background-size: cover;
             min-height: 100vh;
@@ -40,7 +40,7 @@
             margin-bottom: 30px;
             font-size: 2.8em;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
-            font-family: 'Marck Script', cursive;
+            font-family: 'Mountains of Christmas', cursive;
         }
 
         .creator-section {
@@ -67,7 +67,7 @@
             color: #014d77;
             margin-bottom: 15px;
             font-size: 1.4em;
-            font-family: 'Marck Script', cursive;
+            font-family: 'Mountains of Christmas', cursive;
         }
 
         .orientation-buttons {
@@ -84,7 +84,7 @@
             cursor: pointer;
             text-align: center;
             transition: all 0.3s;
-            font-family: 'Caveat', cursive;
+            font-family: 'Dancing Script', cursive;
             font-size: 16px;
         }
 
@@ -129,7 +129,8 @@
             font-size: 16px;
             resize: vertical;
             min-height: 80px;
-            font-family: 'Caveat', cursive;
+            font-family: 'Dancing Script', cursive;
+            white-space: pre-wrap;
         }
 
         .preview-section {
@@ -168,7 +169,7 @@
             z-index: 100;
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
             font-size: 12px;
-            font-family: 'Caveat', cursive;
+            font-family: 'Dancing Script', cursive;
         }
 
         .size-control {
@@ -199,7 +200,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            font-family: 'Caveat', cursive;
+            font-family: 'Dancing Script', cursive;
         }
 
         .btn-download {
@@ -227,7 +228,7 @@
             color: #666;
             margin-top: 10px;
             font-size: 16px;
-            font-family: 'Caveat', cursive;
+            font-family: 'Dancing Script', cursive;
         }
 
         /* Адаптивность */
@@ -479,7 +480,7 @@
                 });
             });
 
-            // Текст
+            // Текст - сохраняем переносы строк
             greetingTextInput.addEventListener('input', (e) => {
                 state.greetingText = e.target.value;
                 updateTextElement();
@@ -507,6 +508,7 @@
                         state.stickers[state.selectedElement].size = parseInt(e.target.value);
                     } else if (state.dragType === 'text') {
                         state.textElements[0].fontSize = parseInt(e.target.value);
+                        updateTextLines();
                     }
                     renderCard();
                 }
@@ -534,7 +536,7 @@
                 // Обновляем существующий текст
                 state.textElements[0].text = state.greetingText;
             }
-            // Обновляем линии текста
+            // Обновляем линии текста с учетом переносов
             updateTextLines();
         }
 
@@ -543,22 +545,34 @@
             
             const textElement = state.textElements[0];
             const maxWidth = canvas.width * 0.8;
-            const words = textElement.text.split(' ');
             const lines = [];
-            let currentLine = words[0];
-
-            for (let i = 1; i < words.length; i++) {
-                const word = words[i];
-                ctx.font = `${textElement.fontSize}px "Caveat"`;
-                const width = ctx.measureText(currentLine + ' ' + word).width;
-                if (width < maxWidth) {
-                    currentLine += ' ' + word;
-                } else {
-                    lines.push(currentLine);
-                    currentLine = word;
+            
+            // Разбиваем текст по переносам строк
+            const paragraphs = textElement.text.split('\n');
+            
+            paragraphs.forEach(paragraph => {
+                if (paragraph.trim() === '') {
+                    lines.push('');
+                    return;
                 }
-            }
-            lines.push(currentLine);
+                
+                const words = paragraph.split(' ');
+                let currentLine = words[0];
+                ctx.font = `${textElement.fontSize}px "Dancing Script"`;
+
+                for (let i = 1; i < words.length; i++) {
+                    const word = words[i];
+                    const width = ctx.measureText(currentLine + ' ' + word).width;
+                    if (width < maxWidth) {
+                        currentLine += ' ' + word;
+                    } else {
+                        lines.push(currentLine);
+                        currentLine = word;
+                    }
+                }
+                lines.push(currentLine);
+            });
+            
             textElement.lines = lines;
         }
 
@@ -578,7 +592,7 @@
             // Сначала проверяем клик по тексту
             if (state.textElements.length > 0) {
                 const textElement = state.textElements[0];
-                const textHeight = textElement.fontSize * textElement.lines.length;
+                const textHeight = textElement.fontSize * textElement.lines.length * 1.2;
                 const textWidth = getTextWidth(textElement);
                 
                 if (coords.x >= textElement.x - textWidth/2 && coords.x <= textElement.x + textWidth/2 &&
@@ -611,7 +625,7 @@
 
         function getTextWidth(textElement) {
             let maxWidth = 0;
-            ctx.font = `${textElement.fontSize}px "Caveat"`;
+            ctx.font = `${textElement.fontSize}px "Dancing Script"`;
             textElement.lines.forEach(line => {
                 const width = ctx.measureText(line).width;
                 if (width > maxWidth) maxWidth = width;
@@ -642,7 +656,7 @@
                 
                 // Ограничиваем движение текста
                 const textWidth = getTextWidth(textElement);
-                const textHeight = textElement.fontSize * textElement.lines.length;
+                const textHeight = textElement.fontSize * textElement.lines.length * 1.2;
                 
                 textElement.x = Math.max(textWidth/2, Math.min(canvas.width - textWidth/2, textElement.x));
                 textElement.y = Math.max(textHeight/2, Math.min(canvas.height - textHeight/2, textElement.y));
@@ -743,7 +757,7 @@
                 y = element.y;
             } else if (state.dragType === 'text') {
                 width = getTextWidth(element);
-                height = element.fontSize * element.lines.length;
+                height = element.fontSize * element.lines.length * 1.2;
                 x = element.x;
                 y = element.y;
             }
@@ -830,12 +844,31 @@
         function renderCard() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Фон (сохраняем пропорции)
+            // Фон с сохранением пропорций
             if (state.selectedBackground) {
                 const bgImg = imageCache.get(state.selectedBackground);
                 if (bgImg && bgImg.complete) {
-                    // Заполняем весь канвас без искажений
-                    ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+                    // Сохраняем пропорции фона
+                    const imgRatio = bgImg.naturalWidth / bgImg.naturalHeight;
+                    const canvasRatio = canvas.width / canvas.height;
+                    
+                    let drawWidth, drawHeight, drawX, drawY;
+                    
+                    if (imgRatio > canvasRatio) {
+                        // Изображение шире канваса
+                        drawHeight = canvas.height;
+                        drawWidth = drawHeight * imgRatio;
+                        drawX = (canvas.width - drawWidth) / 2;
+                        drawY = 0;
+                    } else {
+                        // Изображение выше канваса
+                        drawWidth = canvas.width;
+                        drawHeight = drawWidth / imgRatio;
+                        drawX = 0;
+                        drawY = (canvas.height - drawHeight) / 2;
+                    }
+                    
+                    ctx.drawImage(bgImg, drawX, drawY, drawWidth, drawHeight);
                 }
             } else {
                 ctx.fillStyle = '#ffffff';
@@ -864,7 +897,7 @@
             if (state.textElements.length > 0) {
                 const textElement = state.textElements[0];
                 ctx.fillStyle = '#ffffff';
-                ctx.font = `${textElement.fontSize}px "Caveat"`;
+                ctx.font = `${textElement.fontSize}px "Dancing Script"`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.shadowColor = '#014d77';
@@ -900,10 +933,11 @@
                 ctx.shadowOffsetY = 0;
             }
 
-            // Логотип (фиксированный размер без растягивания)
+            // Логотип - увеличенный размер с сохранением пропорций
             if (state.logo.complete && state.logo.naturalHeight !== 0) {
-                const logoSize = 60; // Фиксированный размер
-                const padding = 10;
+                const logoSize = Math.min(80, canvas.width * 0.15); // Увеличиваем размер
+                const padding = 15;
+                
                 // Сохраняем пропорции логотипа
                 const logoAspect = state.logo.naturalWidth / state.logo.naturalHeight;
                 let drawWidth, drawHeight;
