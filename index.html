@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Новогодний Конструктор Открыток</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@700&display=swap');
+        
         * {
             margin: 0;
             padding: 0;
@@ -12,7 +14,7 @@
         }
 
         body {
-            font-family: 'Playfair Display', sans-serif;
+            font-family: 'Cormorant Garamond', serif;
             background: url('new-year-bg.jpg') fixed;
             background-size: cover;
             min-height: 100vh;
@@ -77,6 +79,7 @@
             cursor: pointer;
             text-align: center;
             transition: all 0.3s;
+            font-family: 'Cormorant Garamond', serif;
         }
 
         .orientation-btn.active {
@@ -116,6 +119,7 @@
             font-size: 14px;
             resize: vertical;
             min-height: 80px;
+            font-family: 'Cormorant Garamond', serif;
         }
 
         .preview-section {
@@ -126,6 +130,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            position: relative;
         }
 
         #cardCanvas {
@@ -134,6 +139,29 @@
             border: 2px dashed #dee2e6;
             border-radius: 10px;
             background: white;
+            cursor: crosshair;
+        }
+
+        .sticker-controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            display: none;
+        }
+
+        .size-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .size-slider {
+            width: 100px;
         }
 
         .actions {
@@ -153,6 +181,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            font-family: 'Cormorant Garamond', serif;
         }
 
         .btn-download {
@@ -173,15 +202,6 @@
         .btn-clear:hover {
             background: #5a6268;
             transform: translateY(-2px);
-        }
-
-        .logo {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            max-width: 80px;
-            height: auto;
-            z-index: 10;
         }
 
         /* Адаптивность */
@@ -244,7 +264,15 @@
 
             <div class="preview-section">
                 <canvas id="cardCanvas"></canvas>
-                <img src="logo3.png" alt="Логотип" class="logo" id="cardLogo">
+                <div class="sticker-controls" id="stickerControls">
+                    <div class="size-control">
+                        <span>Размер:</span>
+                        <input type="range" class="size-slider" id="sizeSlider" min="50" max="200" value="100">
+                    </div>
+                    <button class="btn btn-clear" onclick="deleteSelectedSticker()" style="padding: 5px 10px; font-size: 12px;">
+                        Удалить
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -279,9 +307,14 @@
         let state = {
             orientation: 'vertical',
             selectedBackground: null,
-            selectedStickers: [],
-            greetingText: ''
+            stickers: [], // Массив объектов стикеров
+            greetingText: '',
+            selectedSticker: null,
+            logo: new Image()
         };
+
+        // Загружаем логотип
+        state.logo.src = 'logo.png';
 
         // Элементы DOM
         const canvas = document.getElementById('cardCanvas');
@@ -289,7 +322,8 @@
         const backgroundsGrid = document.getElementById('backgroundsGrid');
         const stickersGrid = document.getElementById('stickersGrid');
         const greetingTextInput = document.getElementById('greetingText');
-        const logo = document.getElementById('cardLogo');
+        const stickerControls = document.getElementById('stickerControls');
+        const sizeSlider = document.getElementById('sizeSlider');
 
         // Инициализация
         function init() {
@@ -327,7 +361,7 @@
                 stickerItem.className = 'sticker-item';
                 stickerItem.style.backgroundImage = `url(${sticker})`;
                 stickerItem.dataset.sticker = sticker;
-                stickerItem.addEventListener('click', () => toggleSticker(sticker));
+                stickerItem.addEventListener('click', () => addSticker(sticker));
                 stickersGrid.appendChild(stickerItem);
             });
         }
@@ -350,14 +384,23 @@
                 renderCard();
             });
 
-            // Перетаскивание стикеров
+            // Клик по канвасу для выбора стикера
             canvas.addEventListener('click', (e) => {
                 const rect = canvas.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                const x = (e.clientX - rect.left) * scaleX;
+                const y = (e.clientY - rect.top) * scaleY;
                 
-                // Можно добавить функционал перемещения стикеров
-                console.log('Click at:', x, y);
+                selectStickerAt(x, y);
+            });
+
+            // Изменение размера стикера
+            sizeSlider.addEventListener('input', (e) => {
+                if (state.selectedSticker !== null) {
+                    state.stickers[state.selectedSticker].size = parseInt(e.target.value);
+                    renderCard();
+                }
             });
         }
 
@@ -372,26 +415,80 @@
             renderCard();
         }
 
-        function toggleSticker(sticker) {
-            const index = state.selectedStickers.indexOf(sticker);
-            if (index > -1) {
-                state.selectedStickers.splice(index, 1);
-                document.querySelector(`.sticker-item[data-sticker="${sticker}"]`).classList.remove('active');
-            } else {
-                state.selectedStickers.push(sticker);
-                document.querySelector(`.sticker-item[data-sticker="${sticker}"]`).classList.add('active');
-            }
+        function addSticker(stickerSrc) {
+            const sticker = {
+                src: stickerSrc,
+                x: canvas.width / 2,
+                y: canvas.height / 2,
+                size: 100,
+                id: Date.now() + Math.random() // Уникальный ID
+            };
+            state.stickers.push(sticker);
             renderCard();
+        }
+
+        function selectStickerAt(x, y) {
+            // Ищем стикер по координатам (проверяем попадание в квадрат)
+            for (let i = state.stickers.length - 1; i >= 0; i--) {
+                const sticker = state.stickers[i];
+                const halfSize = sticker.size / 2;
+                
+                if (x >= sticker.x - halfSize && x <= sticker.x + halfSize &&
+                    y >= sticker.y - halfSize && y <= sticker.y + halfSize) {
+                    
+                    state.selectedSticker = i;
+                    sizeSlider.value = sticker.size;
+                    stickerControls.style.display = 'block';
+                    stickerControls.style.left = (sticker.x - halfSize) + 'px';
+                    stickerControls.style.top = (sticker.y - halfSize - 60) + 'px';
+                    renderCard();
+                    return;
+                }
+            }
+            
+            // Если кликнули мимо стикера
+            state.selectedSticker = null;
+            stickerControls.style.display = 'none';
+            renderCard();
+        }
+
+        function deleteSelectedSticker() {
+            if (state.selectedSticker !== null) {
+                state.stickers.splice(state.selectedSticker, 1);
+                state.selectedSticker = null;
+                stickerControls.style.display = 'none';
+                renderCard();
+            }
         }
 
         function renderCard() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Фон
+            // Фон (без растягивания - сохраняем пропорции)
             if (state.selectedBackground) {
                 const bgImg = new Image();
                 bgImg.onload = () => {
-                    ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+                    // Рассчитываем размеры для сохранения пропорций
+                    const imgRatio = bgImg.width / bgImg.height;
+                    const canvasRatio = canvas.width / canvas.height;
+                    
+                    let drawWidth, drawHeight, offsetX, offsetY;
+                    
+                    if (imgRatio > canvasRatio) {
+                        // Широкая картинка
+                        drawHeight = canvas.height;
+                        drawWidth = bgImg.width * (canvas.height / bgImg.height);
+                        offsetX = (canvas.width - drawWidth) / 2;
+                        offsetY = 0;
+                    } else {
+                        // Высокая картинка
+                        drawWidth = canvas.width;
+                        drawHeight = bgImg.height * (canvas.width / bgImg.width);
+                        offsetX = 0;
+                        offsetY = (canvas.height - drawHeight) / 2;
+                    }
+                    
+                    ctx.drawImage(bgImg, offsetX, offsetY, drawWidth, drawHeight);
                     renderContent();
                 };
                 bgImg.src = state.selectedBackground;
@@ -404,23 +501,34 @@
 
         function renderContent() {
             // Стикеры
-            state.selectedStickers.forEach(sticker => {
+            state.stickers.forEach((sticker, index) => {
                 const img = new Image();
                 img.onload = () => {
-                    const size = Math.min(canvas.width, canvas.height) * 0.2;
-                    const x = Math.random() * (canvas.width - size);
-                    const y = Math.random() * (canvas.height - size);
-                    ctx.drawImage(img, x, y, size, size);
+                    const halfSize = sticker.size / 2;
+                    ctx.drawImage(img, sticker.x - halfSize, sticker.y - halfSize, sticker.size, sticker.size);
+                    
+                    // Выделение выбранного стикера
+                    if (index === state.selectedSticker) {
+                        ctx.strokeStyle = '#d40000';
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(sticker.x - halfSize, sticker.y - halfSize, sticker.size, sticker.size);
+                    }
                 };
-                img.src = sticker;
+                img.src = sticker.src;
             });
 
-            // Текст
+            // Текст с морозным эффектом
             if (state.greetingText) {
-                ctx.fillStyle = '#d40000';
-                ctx.font = 'bold 24px Arial';
+                ctx.fillStyle = '#ffffff'; // Белый цвет
+                ctx.font = 'bold 24px "Cormorant Garamond"';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
+                
+                // Морозный эффект
+                ctx.shadowColor = '#87CEEB';
+                ctx.shadowBlur = 10;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
                 
                 const lines = wrapText(ctx, state.greetingText, canvas.width * 0.8);
                 const lineHeight = 30;
@@ -429,12 +537,15 @@
                 lines.forEach((line, index) => {
                     ctx.fillText(line, canvas.width / 2, startY + index * lineHeight);
                 });
+                
+                ctx.shadowBlur = 0; // Сбрасываем тень
             }
 
-            // Логотип
-            if (logo.complete && logo.naturalHeight !== 0) {
-                const logoSize = Math.min(canvas.width, canvas.height) * 0.1;
-                ctx.drawImage(logo, canvas.width - logoSize - 10, 10, logoSize, logoSize);
+            // Логотип (без растягивания)
+            if (state.logo.complete && state.logo.naturalHeight !== 0) {
+                const logoSize = 60; // Фиксированный размер
+                const padding = 10;
+                ctx.drawImage(state.logo, canvas.width - logoSize - padding, padding, logoSize, logoSize);
             }
         }
 
@@ -466,9 +577,11 @@
 
         function clearCard() {
             state.selectedBackground = null;
-            state.selectedStickers = [];
+            state.stickers = [];
             state.greetingText = '';
+            state.selectedSticker = null;
             greetingTextInput.value = '';
+            stickerControls.style.display = 'none';
             
             document.querySelectorAll('.background-item, .sticker-item').forEach(item => {
                 item.classList.remove('active');
@@ -482,4 +595,3 @@
     </script>
 </body>
 </html>
-
