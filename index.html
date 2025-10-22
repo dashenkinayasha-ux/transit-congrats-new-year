@@ -13,13 +13,40 @@
 
         body {
             font-family: 'Arial', sans-serif;
-            background: url('new-year-bg.jpg') fixed;
-            background-size: cover;
+            background: linear-gradient(135deg, #1a2a6c, #2c3e50);
             min-height: 100vh;
             padding: 20px;
             display: flex;
             justify-content: center;
             align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Снежинки */
+        .snowflakes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .snowflake {
+            position: absolute;
+            top: -10px;
+            color: white;
+            font-size: 1.5rem;
+            opacity: 0.8;
+            animation: fall linear infinite;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+            }
         }
 
         .container {
@@ -126,6 +153,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            position: relative;
         }
 
         #cardCanvas {
@@ -175,15 +203,6 @@
             transform: translateY(-2px);
         }
 
-        .logo {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            max-width: 80px;
-            height: auto;
-            z-index: 10;
-        }
-
         /* Адаптивность */
         @media (max-width: 768px) {
             .creator-section {
@@ -205,6 +224,8 @@
     </style>
 </head>
 <body>
+    <div class="snowflakes" id="snowflakes"></div>
+
     <div class="container">
         <h1>🎄 Новогодний Конструктор Открыток 🎅</h1>
         
@@ -244,7 +265,6 @@
 
             <div class="preview-section">
                 <canvas id="cardCanvas"></canvas>
-                <img src="./images/logo3.png" alt="Логотип" class="logo" id="cardLogo">
             </div>
         </div>
 
@@ -259,7 +279,7 @@
     </div>
 
     <script>
-        // Конфигурация - ВАШ ФОРМАТ ДАННЫХ
+        // Конфигурация - файлы в корне сервера
         const config = {
             orientations: {
                 vertical: { width: 400, height: 600 },
@@ -272,7 +292,8 @@
             stickers: [
                 'sticker1.png', 'sticker2.png', 'sticker3.png', 'sticker4.png',
                 'sticker5.png', 'sticker6.png', 'sticker7.png', 'sticker8.png'
-            ]
+            ],
+            logo: 'logo3.png'
         };
 
         // Состояние приложения
@@ -280,8 +301,7 @@
             orientation: 'vertical',
             selectedBackground: null,
             selectedStickers: [],
-            greetingText: 'С Новым Годом!',
-            draggableStickers: []
+            greetingText: 'С Новым Годом!'
         };
 
         // Элементы DOM
@@ -290,10 +310,27 @@
         const backgroundsGrid = document.getElementById('backgroundsGrid');
         const stickersGrid = document.getElementById('stickersGrid');
         const greetingTextInput = document.getElementById('greetingText');
-        const logo = document.getElementById('cardLogo');
+        const snowflakesContainer = document.getElementById('snowflakes');
+
+        // Создание снежинок
+        function createSnowflakes() {
+            const snowflakeCount = 50;
+            for (let i = 0; i < snowflakeCount; i++) {
+                const snowflake = document.createElement('div');
+                snowflake.classList.add('snowflake');
+                snowflake.innerHTML = '❄';
+                snowflake.style.left = Math.random() * 100 + 'vw';
+                snowflake.style.animationDuration = (Math.random() * 10 + 5) + 's';
+                snowflake.style.animationDelay = Math.random() * 5 + 's';
+                snowflake.style.opacity = Math.random() * 0.7 + 0.3;
+                snowflake.style.fontSize = (Math.random() * 10 + 10) + 'px';
+                snowflakesContainer.appendChild(snowflake);
+            }
+        }
 
         // Инициализация
         function init() {
+            createSnowflakes();
             setupCanvas();
             loadBackgrounds();
             loadStickers();
@@ -314,7 +351,7 @@
             config.backgrounds.forEach((bg, index) => {
                 const bgItem = document.createElement('div');
                 bgItem.className = 'background-item';
-                bgItem.style.backgroundImage = `url(./backgrounds/${bg})`;
+                bgItem.style.backgroundImage = `url(${bg})`;
                 bgItem.dataset.background = bg;
                 bgItem.addEventListener('click', () => selectBackground(bg));
                 backgroundsGrid.appendChild(bgItem);
@@ -331,7 +368,7 @@
             config.stickers.forEach((sticker, index) => {
                 const stickerItem = document.createElement('div');
                 stickerItem.className = 'sticker-item';
-                stickerItem.style.backgroundImage = `url(./stickers/${sticker})`;
+                stickerItem.style.backgroundImage = `url(${sticker})`;
                 stickerItem.dataset.sticker = sticker;
                 stickerItem.addEventListener('click', () => toggleSticker(sticker));
                 stickersGrid.appendChild(stickerItem);
@@ -354,16 +391,6 @@
             greetingTextInput.addEventListener('input', (e) => {
                 state.greetingText = e.target.value;
                 renderCard();
-            });
-
-            // Перетаскивание стикеров
-            canvas.addEventListener('click', (e) => {
-                const rect = canvas.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                
-                // Можно добавить функционал перемещения стикеров
-                console.log('Click at:', x, y);
             });
         }
 
@@ -400,7 +427,7 @@
                     ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
                     renderContent();
                 };
-                bgImg.src = `./backgrounds/${state.selectedBackground}`;
+                bgImg.src = state.selectedBackground;
             } else {
                 ctx.fillStyle = '#ffffff';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -409,6 +436,14 @@
         }
 
         function renderContent() {
+            // Логотип
+            const logoImg = new Image();
+            logoImg.onload = () => {
+                const logoSize = Math.min(canvas.width, canvas.height) * 0.15;
+                ctx.drawImage(logoImg, canvas.width - logoSize - 20, 20, logoSize, logoSize);
+            };
+            logoImg.src = config.logo;
+
             // Стикеры
             state.selectedStickers.forEach(sticker => {
                 const img = new Image();
@@ -418,32 +453,28 @@
                     const y = Math.random() * (canvas.height - size);
                     ctx.drawImage(img, x, y, size, size);
                 };
-                img.src = `./stickers/${sticker}`;
+                img.src = sticker;
             });
 
             // Текст
             if (state.greetingText) {
-                ctx.fillStyle = '#d40000';
-                ctx.font = 'bold 24px Arial';
+                ctx.fillStyle = '#ffffff';
+                ctx.strokeStyle = '#014d77';
+                ctx.lineWidth = 3;
+                ctx.font = 'bold 28px Arial';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 
                 const lines = wrapText(ctx, state.greetingText, canvas.width * 0.8);
-                const lineHeight = 30;
+                const lineHeight = 35;
                 const startY = canvas.height / 2 - (lines.length * lineHeight) / 2;
                 
+                // Рисуем обводку и текст
                 lines.forEach((line, index) => {
+                    ctx.strokeText(line, canvas.width / 2, startY + index * lineHeight);
                     ctx.fillText(line, canvas.width / 2, startY + index * lineHeight);
                 });
             }
-
-            // Логотип
-            const logoImg = new Image();
-            logoImg.onload = () => {
-                const logoSize = Math.min(canvas.width, canvas.height) * 0.1;
-                ctx.drawImage(logoImg, canvas.width - logoSize - 10, 10, logoSize, logoSize);
-            };
-            logoImg.src = './images/logo3.png';
         }
 
         function wrapText(context, text, maxWidth) {
@@ -476,7 +507,7 @@
             state.selectedBackground = null;
             state.selectedStickers = [];
             state.greetingText = '';
-            greetingTextInput.value = '';
+            greetingTextInput.value = 'С Новым Годом!';
             
             document.querySelectorAll('.background-item, .sticker-item').forEach(item => {
                 item.classList.remove('active');
