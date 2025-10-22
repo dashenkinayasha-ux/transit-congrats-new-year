@@ -17,12 +17,12 @@
             font-family: 'Caveat', cursive;
             background: linear-gradient(135deg, #1a2a6c, #2c3e50);
             min-height: 100vh;
-            padding: 20px;
+            padding: 10px; /* Уменьшаем padding для мобильных */
             display: flex;
             justify-content: center;
             align-items: flex-start;
             position: relative;
-            overflow-x: hidden;
+            /* overflow-x: hidden; - Убрано, чтобы не скрывать проблему */
         }
 
         /* Снежинки */
@@ -53,7 +53,7 @@
 
         .container {
             max-width: 1200px;
-            width: 100%;
+            width: 96%; /* КРИТИЧЕСКОЕ ИЗМЕНЕНИЕ: Установка ширины 96% */
             background: rgba(255, 255, 255, 0.95);
             border-radius: 20px;
             padding: 30px;
@@ -213,8 +213,7 @@
             justify-content: center;
             align-items: center;
             position: relative;
-            min-height: 500px;
-            /* Убедимся, что контейнер холста может сжиматься на мобильных */
+            min-height: 400px; /* Уменьшаем min-height для мобильных */
             width: 100%; 
         }
 
@@ -223,11 +222,6 @@
             border-radius: 10px;
             background: white;
             cursor: default; 
-            /* КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ #2: Убираем max-width/max-height, 
-               чтобы холст отображался без искажений по его фактическим пропорциям.
-               Размер будет контролироваться JS и CSS-свойствами width/height, а не max- размерами. */
-            /* max-width: 100%; */
-            /* max-height: 500px; */
         }
 
         .actions {
@@ -260,9 +254,16 @@
 
         /* Адаптивность */
         @media (max-width: 968px) {
-            .creator-section { grid-template-columns: 1fr; gap: 20px; }
+            .creator-section { 
+                grid-template-columns: 1fr; 
+                gap: 15px; /* КРИТИЧЕСКОЕ ИЗМЕНЕНИЕ: Уменьшаем gap */
+            }
             .controls { order: 2; max-height: none; }
-            .preview-section { order: 1; min-height: 400px; }
+            .preview-section { 
+                order: 1; 
+                min-height: 350px; 
+                padding: 10px; /* КРИТИЧЕСКОЕ ИЗМЕНЕНИЕ: Уменьшаем padding */
+            }
             h1 { font-size: 2.2em; }
         }
 
@@ -270,6 +271,8 @@
             .container { padding: 15px; }
             .controls { padding: 15px; }
             .orientation-buttons { flex-direction: column; }
+            /* Уменьшаем размер шрифтов на кнопках */
+             .font-btn, .align-btn, .size-btn { font-size: 12px; }
         }
     </style>
 </head>
@@ -368,7 +371,7 @@
             logo: 'logo3.png'
         };
 
-        // КЭШ ИЗОБРАЖЕНИЙ: Здесь будут храниться загруженные Image-объекты
+        // КЭШ ИЗОБРАЖЕНИЙ
         let cachedImages = new Map();
         let backgroundItem = null;
         let logoItem = null;
@@ -499,7 +502,7 @@
             }
         }
 
-        // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ #1: Логика масштабирования холста для предотвращения искажений и учета мобильных экранов
+        // Логика масштабирования холста для предотвращения искажений и учета мобильных экранов
         function setupCanvas() {
             const { width: nativeWidth, height: nativeHeight } = config.orientations[state.orientation];
             
@@ -508,41 +511,42 @@
             canvas.height = nativeHeight;
 
             // Вычисляем размеры для отображения (чтобы они помещались в контейнер без искажений)
-            const maxContainerWidth = previewSection.clientWidth - 40; // Ширина контейнера минус padding
-            const maxContainerHeight = 500; // Ограничение по высоте
+            const padding = parseInt(window.getComputedStyle(previewSection).paddingLeft) * 2;
+            const maxContainerWidth = previewSection.clientWidth - padding; 
+            const maxContainerHeight = 500; 
 
             let displayWidth = nativeWidth;
             let displayHeight = nativeHeight;
 
-            // Сначала масштабируем по ширине, чтобы поместиться в контейнер
+            // 1. Масштабируем по ширине, чтобы поместиться в контейнер
             if (displayWidth > maxContainerWidth) {
                 displayWidth = maxContainerWidth;
                 displayHeight = displayWidth * (nativeHeight / nativeWidth);
             }
 
-            // Затем проверяем ограничение по высоте
+            // 2. Затем проверяем ограничение по высоте
             if (displayHeight > maxContainerHeight) {
                 displayHeight = maxContainerHeight;
                 displayWidth = displayHeight * (nativeWidth / nativeHeight);
             }
             
-            // Если на мобильном (узкий экран) горизонтальный формат не помещается
-            if (window.innerWidth <= 968 && state.orientation === 'horizontal') {
-                const mobileMaxWidth = window.innerWidth - 60; // Ширина экрана минус padding/margin
+            // 3. Дополнительная проверка для узких мобильных экранов
+            if (window.innerWidth <= 968) {
+                const mobileMaxWidth = document.querySelector('.container').clientWidth - (parseInt(window.getComputedStyle(document.querySelector('.container')).paddingLeft) * 2);
+                
                 if (displayWidth > mobileMaxWidth) {
-                    displayWidth = mobileMaxWidth;
-                    displayHeight = displayWidth * (nativeHeight / nativeWidth);
+                     displayWidth = mobileMaxWidth;
+                     displayHeight = displayWidth * (nativeHeight / nativeWidth);
                 }
             }
 
 
-            // Применяем вычисленные размеры к CSS для отображения (это предотвращает искажение)
+            // Применяем вычисленные размеры к CSS для отображения 
             canvas.style.width = `${displayWidth}px`;
             canvas.style.height = `${displayHeight}px`;
 
             // Обновляем координаты элементов при смене ориентации 
             state.draggableItems.forEach(item => {
-                // ... (логика обновления координат остается прежней) ...
                 if (item.type === 'text') {
                      item.x = nativeWidth / 2;
                      item.y = nativeHeight * 0.4;
@@ -598,12 +602,12 @@
                     document.querySelectorAll('.orientation-btn').forEach(b => b.classList.remove('active'));
                     e.target.classList.add('active');
                     state.orientation = e.target.dataset.orientation;
-                    setupCanvas(); // Пересчитываем размеры
+                    setupCanvas(); 
                     renderCard();
                 });
             });
 
-            // Текст, Цвет, Шрифты, Размер, Выравнивание (Остается без изменений)
+            // Текст, Цвет, Шрифты, Размер, Выравнивание
             greetingTextInput.addEventListener('input', (e) => {
                 state.greetingText = e.target.value;
                 const textItem = state.draggableItems.find(item => item.type === 'text');
@@ -636,7 +640,7 @@
             });
 
 
-            // Перетаскивание на canvas (Остается без изменений)
+            // Перетаскивание на canvas
             canvas.addEventListener('mousedown', startDrag);
             document.addEventListener('mousemove', drag); 
             document.addEventListener('mouseup', stopDrag);
@@ -699,7 +703,7 @@
             renderCard();
         }
 
-        // --- ЛОГИКА ПЕРЕТАСКИВАНИЯ (Остается без изменений, так как работает корректно) ---
+        // --- ЛОГИКА ПЕРЕТАСКИВАНИЯ ---
 
         function getCanvasMousePosition(e) {
             const rect = canvas.getBoundingClientRect();
@@ -1047,7 +1051,7 @@
             return lines;
         }
 
-        // --- ДЕЙСТВИЯ (Без изменений) ---
+        // --- ДЕЙСТВИЯ ---
 
         function downloadCard() {
             const scaleFactor = 2;
