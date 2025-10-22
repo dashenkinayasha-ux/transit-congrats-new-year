@@ -214,15 +214,20 @@
             align-items: center;
             position: relative;
             min-height: 500px;
+            /* Убедимся, что контейнер холста может сжиматься на мобильных */
+            width: 100%; 
         }
 
         #cardCanvas {
-            max-width: 100%;
-            max-height: 500px;
             border: 2px dashed #dee2e6;
             border-radius: 10px;
             background: white;
             cursor: default; 
+            /* КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ #2: Убираем max-width/max-height, 
+               чтобы холст отображался без искажений по его фактическим пропорциям.
+               Размер будет контролироваться JS и CSS-свойствами width/height, а не max- размерами. */
+            /* max-width: 100%; */
+            /* max-height: 500px; */
         }
 
         .actions {
@@ -392,9 +397,10 @@
         const fontBtns = document.querySelectorAll('.font-btn');
         const alignBtns = document.querySelectorAll('.align-btn');
         const sizeBtns = document.querySelectorAll('.size-btn');
+        const previewSection = document.querySelector('.preview-section'); // Получаем контейнер
 
         // Перетаскиваемые элементы
-        let selectedElementIndex = -1; // Индекс выбранного элемента в draggableItems
+        let selectedElementIndex = -1; 
         let isDragging = false;
         let isResizing = false;
         let dragStartX, dragStartY;
@@ -435,6 +441,9 @@
             loadStickers();
             setupEventListeners();
             renderCard();
+
+            // Добавляем слушатель для пересчета размеров при изменении окна
+            window.addEventListener('resize', setupCanvas);
         }
 
         function loadInitialElements() {
@@ -490,31 +499,68 @@
             }
         }
 
+        // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ #1: Логика масштабирования холста для предотвращения искажений и учета мобильных экранов
         function setupCanvas() {
-            const { width, height } = config.orientations[state.orientation];
-            canvas.width = width;
-            canvas.height = height;
-            canvas.style.width = `${width}px`;
-            canvas.style.height = `${height}px`;
+            const { width: nativeWidth, height: nativeHeight } = config.orientations[state.orientation];
+            
+            // Устанавливаем нативные размеры (рабочее пространство)
+            canvas.width = nativeWidth;
+            canvas.height = nativeHeight;
 
-            // Обновляем координаты элементов при смене ориентации, чтобы они оставались в центре
+            // Вычисляем размеры для отображения (чтобы они помещались в контейнер без искажений)
+            const maxContainerWidth = previewSection.clientWidth - 40; // Ширина контейнера минус padding
+            const maxContainerHeight = 500; // Ограничение по высоте
+
+            let displayWidth = nativeWidth;
+            let displayHeight = nativeHeight;
+
+            // Сначала масштабируем по ширине, чтобы поместиться в контейнер
+            if (displayWidth > maxContainerWidth) {
+                displayWidth = maxContainerWidth;
+                displayHeight = displayWidth * (nativeHeight / nativeWidth);
+            }
+
+            // Затем проверяем ограничение по высоте
+            if (displayHeight > maxContainerHeight) {
+                displayHeight = maxContainerHeight;
+                displayWidth = displayHeight * (nativeWidth / nativeHeight);
+            }
+            
+            // Если на мобильном (узкий экран) горизонтальный формат не помещается
+            if (window.innerWidth <= 968 && state.orientation === 'horizontal') {
+                const mobileMaxWidth = window.innerWidth - 60; // Ширина экрана минус padding/margin
+                if (displayWidth > mobileMaxWidth) {
+                    displayWidth = mobileMaxWidth;
+                    displayHeight = displayWidth * (nativeHeight / nativeWidth);
+                }
+            }
+
+
+            // Применяем вычисленные размеры к CSS для отображения (это предотвращает искажение)
+            canvas.style.width = `${displayWidth}px`;
+            canvas.style.height = `${displayHeight}px`;
+
+            // Обновляем координаты элементов при смене ориентации 
             state.draggableItems.forEach(item => {
+                // ... (логика обновления координат остается прежней) ...
                 if (item.type === 'text') {
-                     item.x = width / 2;
-                     item.y = height * 0.4;
-                     item.width = width * 0.8;
+                     item.x = nativeWidth / 2;
+                     item.y = nativeHeight * 0.4;
+                     item.width = nativeWidth * 0.8;
                 } else if (item.type === 'logo') {
                     const ratio = cachedImages.get(item.src).width / cachedImages.get(item.src).height;
-                    const logoSize = Math.min(width, height) * 0.36;
+                    const logoSize = Math.min(nativeWidth, nativeHeight) * 0.36;
                     item.width = logoSize;
                     item.height = logoSize / ratio;
-                    item.x = width - item.width - 20;
+                    item.x = nativeWidth - item.width - 20;
                     item.y = 20;
                 } else if (item.type === 'sticker') {
-                    item.x = Math.min(item.x, width - item.width);
-                    item.y = Math.min(item.y, height - item.height);
+                    item.x = Math.min(item.x, nativeWidth - item.width);
+                    item.y = Math.min(item.y, nativeHeight - item.height);
                 }
             });
+
+            renderCard();
         }
 
         function loadBackgrounds() {
@@ -552,12 +598,12 @@
                     document.querySelectorAll('.orientation-btn').forEach(b => b.classList.remove('active'));
                     e.target.classList.add('active');
                     state.orientation = e.target.dataset.orientation;
-                    setupCanvas();
+                    setupCanvas(); // Пересчитываем размеры
                     renderCard();
                 });
             });
 
-            // Текст
+            // Текст, Цвет, Шрифты, Размер, Выравнивание (Остается без изменений)
             greetingTextInput.addEventListener('input', (e) => {
                 state.greetingText = e.target.value;
                 const textItem = state.draggableItems.find(item => item.type === 'text');
@@ -565,7 +611,6 @@
                 renderCard();
             });
 
-            // Цвет текста
             textColorInput.addEventListener('input', (e) => {
                 state.textColor = e.target.value;
                 const textItem = state.draggableItems.find(item => item.type === 'text');
@@ -573,7 +618,6 @@
                 renderCard();
             });
 
-            // Шрифты, Размер, Выравнивание
             [...fontBtns, ...sizeBtns, ...alignBtns].forEach(btn => {
                 btn.addEventListener('click', function() {
                     const group = this.parentNode.className.split('-')[0];
@@ -591,7 +635,8 @@
                 });
             });
 
-            // Перетаскивание на canvas
+
+            // Перетаскивание на canvas (Остается без изменений)
             canvas.addEventListener('mousedown', startDrag);
             document.addEventListener('mousemove', drag); 
             document.addEventListener('mouseup', stopDrag);
@@ -642,7 +687,7 @@
             const newSticker = {
                 type: 'sticker',
                 src: sticker,
-                x: canvas.width / 2 - width / 2 + Math.random() * 20 - 10, // Сдвиг для видимости
+                x: canvas.width / 2 - width / 2 + Math.random() * 20 - 10, 
                 y: canvas.height / 2 - height / 2 + Math.random() * 20 - 10,
                 width: width,
                 height: height,
@@ -650,11 +695,11 @@
             };
 
             state.draggableItems.push(newSticker);
-            selectedElementIndex = state.draggableItems.length - 1; // Выбираем только что добавленный
+            selectedElementIndex = state.draggableItems.length - 1; 
             renderCard();
         }
 
-        // --- ЛОГИКА ПЕРЕТАСКИВАНИЯ ---
+        // --- ЛОГИКА ПЕРЕТАСКИВАНИЯ (Остается без изменений, так как работает корректно) ---
 
         function getCanvasMousePosition(e) {
             const rect = canvas.getBoundingClientRect();
@@ -674,11 +719,9 @@
         }
 
         function getElementAt(x, y) {
-            // Ищем с конца, чтобы выбрать верхний элемент
             for (let i = state.draggableItems.length - 1; i >= 0; i--) {
                 const item = state.draggableItems[i];
                 if (item.type === 'text') {
-                    // Для текста нужно специальное определение области 
                     const textBoundaryX = item.align === 'center' ? item.x - item.width / 2 : item.x;
                     const textBoundaryWidth = item.width;
                     const textBoundaryHeight = item.height; 
@@ -702,14 +745,13 @@
             
             const index = getElementAt(x, y);
             if (index === -1) {
-                selectedElementIndex = -1; // Сбрасываем выбор, если клик вне элементов
+                selectedElementIndex = -1; 
                 renderCard();
                 return;
             }
 
             const selectedElement = state.draggableItems[index];
 
-            // Перемещаем выбранный элемент на самый верх 
             if (index !== state.draggableItems.length - 1) {
                 state.draggableItems.splice(index, 1);
                 state.draggableItems.push(selectedElement);
@@ -718,7 +760,6 @@
                 selectedElementIndex = index;
             }
             
-
             dragStartX = x;
             dragStartY = y;
             elementStartX = selectedElement.x;
@@ -726,8 +767,7 @@
             elementStartWidth = selectedElement.width;
             elementStartHeight = selectedElement.height;
 
-            // Проверяем клик по углу для изменения размера
-            const cornerSize = 30; // Размер для мыши
+            const cornerSize = 30; 
             if ((selectedElement.type === 'sticker' || selectedElement.type === 'logo') &&
                 x > selectedElement.x + selectedElement.width - cornerSize &&
                 y > selectedElement.y + selectedElement.height - cornerSize) {
@@ -741,7 +781,7 @@
             }
             
             e.preventDefault();
-            renderCard(); // Отрисовываем рамку выбора
+            renderCard(); 
         }
 
         function startDragTouch(e) {
@@ -756,7 +796,6 @@
 
             const selectedElement = state.draggableItems[index];
 
-            // Перемещаем выбранный элемент на самый верх
             if (index !== state.draggableItems.length - 1) {
                 state.draggableItems.splice(index, 1);
                 state.draggableItems.push(selectedElement);
@@ -791,7 +830,6 @@
         function drag(e) {
             if (selectedElementIndex === -1 || (!isDragging && !isResizing)) return;
             
-            // Получаем координаты относительно canvas
             const rect = canvas.getBoundingClientRect();
             const scaleX = canvas.width / rect.width;
             const scaleY = canvas.height / rect.height;
@@ -819,7 +857,6 @@
                 let newX = elementStartX + deltaX;
                 let newY = elementStartY + deltaY;
 
-                // Ограничиваем перемещение в пределах canvas
                 if (selectedElement.type === 'sticker' || selectedElement.type === 'logo') {
                     newX = Math.max(0, Math.min(canvas.width - selectedElement.width, newX));
                     newY = Math.max(0, Math.min(canvas.height - selectedElement.height, newY));
@@ -852,7 +889,6 @@
         // --- ОТРИСОВКА ---
 
         function renderCard() {
-            // Очищаем холст
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             // 1. Отрисовка Фона 
@@ -864,12 +900,12 @@
                     
                     let drawWidth, drawHeight, offsetX, offsetY;
                     
-                    if (imgRatio > canvasRatio) { // Заполнить по высоте
+                    if (imgRatio > canvasRatio) { 
                         drawHeight = canvas.height;
                         drawWidth = drawHeight * imgRatio;
                         offsetX = (canvas.width - drawWidth) / 2;
                         offsetY = 0;
-                    } else { // Заполнить по ширине
+                    } else { 
                         drawWidth = canvas.width;
                         drawHeight = drawWidth / imgRatio;
                         offsetX = 0;
@@ -886,7 +922,7 @@
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
 
-            // 2. Отрисовка Элементов (Стикеры, Лого, Текст)
+            // 2. Отрисовка Элементов 
             state.draggableItems.forEach((item, index) => {
                 if (item.type === 'sticker' || item.type === 'logo') {
                     const img = cachedImages.get(item.src);
@@ -907,7 +943,7 @@
         function drawSelectionBox(item) {
             ctx.strokeStyle = '#014d77';
             ctx.lineWidth = 2;
-            ctx.setLineDash([5, 5]); // Пунктир
+            ctx.setLineDash([5, 5]); 
             
             let boxX, boxY, boxWidth, boxHeight;
 
@@ -926,11 +962,11 @@
             }
 
             ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
-            ctx.setLineDash([]); // Сбрасываем пунктир
+            ctx.setLineDash([]); 
 
             // Контрольная точка изменения размера (увеличенная для мобильных)
             if (item.type === 'sticker' || item.type === 'logo') {
-                const handleSize = 20; // Увеличенный размер квадрата
+                const handleSize = 20; 
                 ctx.fillStyle = '#014d77';
                 ctx.fillRect(boxX + boxWidth - handleSize / 2, boxY + boxHeight - handleSize / 2, handleSize, handleSize);
             }
@@ -966,7 +1002,6 @@
             
             const lines = wrapText(ctx, item.content, maxWidth, fontSize, fontFamily);
 
-            // Обновляем высоту элемента для корректного перетаскивания и рамки
             item.height = lines.length * lineHeight;
             
             let xPos = item.x; 
@@ -1012,10 +1047,9 @@
             return lines;
         }
 
-        // --- ДЕЙСТВИЯ ---
+        // --- ДЕЙСТВИЯ (Без изменений) ---
 
         function downloadCard() {
-            // Используем увеличенное разрешение (2x) для "HD"
             const scaleFactor = 2;
             const hdCanvas = document.createElement('canvas');
             hdCanvas.width = canvas.width * scaleFactor;
@@ -1026,7 +1060,6 @@
             
             renderCardHD(hdCtx, hdCanvas.width / scaleFactor, hdCanvas.height / scaleFactor);
 
-            // Скачиваем
             const dataURL = hdCanvas.toDataURL('image/png');
             const link = document.createElement('a');
             link.href = dataURL;
@@ -1036,7 +1069,6 @@
             document.body.removeChild(link);
         }
 
-        // Функция рендеринга для HD
         function renderCardHD(hdCtx, hdWidth, hdHeight) {
             // 1. Фон
             if (state.selectedBackground) {
@@ -1079,7 +1111,6 @@
             });
         }
         
-        // Отдельная функция для рендеринга текста в HD
         function renderTextHD(hdCtx, item, hdWidth, hdHeight) {
              if (!item.content) return;
 
@@ -1093,7 +1124,6 @@
                 default: fontFamily = "'Marck Script', cursive";
             }
             
-            // Расчет размера шрифта на основе HD-размеров
             function getFontSizeHD(size) {
                  switch(size) {
                     case 'small': return Math.min(hdWidth, hdHeight) * 0.04;
@@ -1127,27 +1157,18 @@
 
 
         function clearCard() {
-            // Сброс всех стикеров и оставляем только текст и логотип
             state.draggableItems = state.draggableItems.filter(item => item.type === 'text' || item.type === 'logo');
-
-            // Сброс текста к изначальному
             state.greetingText = 'С Новым Годом!';
             greetingTextInput.value = state.greetingText;
-
-            // Сброс выбора
             selectedElementIndex = -1;
             
-            // Обновление текстового элемента
             const textItem = state.draggableItems.find(item => item.type === 'text');
             if (textItem) {
                  textItem.content = state.greetingText;
-                 // (Стили остаются, как выбрано пользователем в контролах)
             }
 
-            // Перерисовка
             renderCard();
         }
     </script>
 </body>
 </html>
-
