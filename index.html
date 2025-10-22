@@ -17,12 +17,14 @@
             font-family: 'Caveat', cursive;
             background: linear-gradient(135deg, #1a2a6c, #2c3e50);
             min-height: 100vh;
-            padding: 10px; /* Уменьшаем padding для мобильных */
+            padding: 10px; 
             display: flex;
             justify-content: center;
             align-items: flex-start;
             position: relative;
-            /* overflow-x: hidden; - Убрано, чтобы не скрывать проблему */
+            /* КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Гарантируем, что body занимает всю ширину и имеет минимальный размер */
+            width: 100vw; 
+            min-width: 320px;
         }
 
         /* Снежинки */
@@ -53,7 +55,7 @@
 
         .container {
             max-width: 1200px;
-            width: 96%; /* КРИТИЧЕСКОЕ ИЗМЕНЕНИЕ: Установка ширины 96% */
+            width: 100%; /* КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Установка ширины 100% */
             background: rgba(255, 255, 255, 0.95);
             border-radius: 20px;
             padding: 30px;
@@ -213,8 +215,9 @@
             justify-content: center;
             align-items: center;
             position: relative;
-            min-height: 400px; /* Уменьшаем min-height для мобильных */
+            min-height: 400px; 
             width: 100%; 
+            margin: 0 auto; /* КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Центрируем контейнер */
         }
 
         #cardCanvas {
@@ -256,23 +259,24 @@
         @media (max-width: 968px) {
             .creator-section { 
                 grid-template-columns: 1fr; 
-                gap: 15px; /* КРИТИЧЕСКОЕ ИЗМЕНЕНИЕ: Уменьшаем gap */
+                gap: 15px; 
             }
             .controls { order: 2; max-height: none; }
             .preview-section { 
                 order: 1; 
                 min-height: 350px; 
-                padding: 10px; /* КРИТИЧЕСКОЕ ИЗМЕНЕНИЕ: Уменьшаем padding */
+                padding: 10px; 
             }
             h1 { font-size: 2.2em; }
         }
 
         @media (max-width: 480px) {
-            .container { padding: 15px; }
+            .container { 
+                padding: 10px; /* КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Меньше padding для узких экранов */
+            }
             .controls { padding: 15px; }
             .orientation-buttons { flex-direction: column; }
-            /* Уменьшаем размер шрифтов на кнопках */
-             .font-btn, .align-btn, .size-btn { font-size: 12px; }
+            .font-btn, .align-btn, .size-btn { font-size: 12px; }
         }
     </style>
 </head>
@@ -365,8 +369,8 @@
                 'bg5.png', 'bg6.png', 'bg7.png', 'bg8.png'
             ],
             stickers: [
-                'st1.png', 'st2.png', 'st3.png', 'st4.png',
-                'st5.png', 'st6.png', 'st7.png', 'st8.png'
+                'sticker1.png', 'sticker2.png', 'sticker3.png', 'sticker4.png',
+                'sticker5.png', 'sticker6.png', 'sticker7.png', 'sticker8.png'
             ],
             logo: 'logo3.png'
         };
@@ -532,7 +536,8 @@
             
             // 3. Дополнительная проверка для узких мобильных экранов
             if (window.innerWidth <= 968) {
-                const mobileMaxWidth = document.querySelector('.container').clientWidth - (parseInt(window.getComputedStyle(document.querySelector('.container')).paddingLeft) * 2);
+                // Берем ширину контейнера creator-section, чтобы избежать смещения
+                const mobileMaxWidth = document.querySelector('.creator-section').clientWidth; 
                 
                 if (displayWidth > mobileMaxWidth) {
                      displayWidth = mobileMaxWidth;
