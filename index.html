@@ -6,6 +6,7 @@
     <title>Создай новогоднюю открытку</title>
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Marck+Script&family=Bad+Script&display=swap" rel="stylesheet">
     <style>
+        /* Стили остались в основном прежними, с небольшими дополнениями для новых элементов управления */
         * {
             margin: 0;
             padding: 0;
@@ -134,6 +135,9 @@
             gap: 8px;
             max-height: 150px;
             overflow-y: auto;
+            /* Убрана инлайн-прокрутка стикеров для улучшения UX */
+            max-height: none; 
+            overflow-y: visible;
         }
 
         .background-item, .sticker-item {
@@ -163,10 +167,20 @@
             font-weight: 500;
         }
 
-        .font-buttons, .align-buttons, .size-buttons {
+        .font-buttons, .align-buttons, .size-buttons, .color-control {
             display: flex;
             gap: 8px;
             margin-top: 8px;
+            align-items: center;
+        }
+        
+        .color-control input[type="color"] {
+            width: 40px;
+            height: 40px;
+            padding: 2px;
+            border: 2px solid #dee2e6;
+            border-radius: 5px;
+            cursor: pointer;
         }
 
         .font-btn, .align-btn, .size-btn {
@@ -189,17 +203,9 @@
             border-color: #014d77;
         }
 
-        .font-marck {
-            font-family: 'Marck Script', cursive;
-        }
-
-        .font-caveat {
-            font-family: 'Caveat', cursive;
-        }
-
-        .font-badscript {
-            font-family: 'Bad Script', cursive;
-        }
+        .font-marck { font-family: 'Marck Script', cursive; }
+        .font-caveat { font-family: 'Caveat', cursive; }
+        .font-badscript { font-family: 'Bad Script', cursive; }
 
         .preview-section {
             background: #f8f9fa;
@@ -219,13 +225,15 @@
             border: 2px dashed #dee2e6;
             border-radius: 10px;
             background: white;
-            cursor: move;
+            /* Курсор меняется JS в зависимости от режима */
+            cursor: default; 
         }
 
         .actions {
             display: flex;
             gap: 15px;
             justify-content: center;
+            margin-top: 20px;
         }
 
         .btn {
@@ -243,64 +251,28 @@
             font-weight: 700;
         }
 
-        .btn-download {
-            background: #014d77;
-            color: white;
-        }
+        .btn-download { background: #014d77; color: white; }
+        .btn-download:hover { background: #013a5c; transform: translateY(-2px); }
 
-        .btn-download:hover {
-            background: #013a5c;
-            transform: translateY(-2px);
-        }
+        .btn-clear { background: #6c757d; color: white; }
+        .btn-clear:hover { background: #5a6268; transform: translateY(-2px); }
 
-        .btn-clear {
-            background: #6c757d;
-            color: white;
-        }
-
-        .btn-clear:hover {
-            background: #5a6268;
-            transform: translateY(-2px);
-        }
-
-        /* Адаптивность */
+        /* Адаптивность - без изменений */
         @media (max-width: 968px) {
-            .creator-section {
-                grid-template-columns: 1fr;
-                gap: 20px;
-            }
-            
-            .controls {
-                order: 2;
-                max-height: none;
-            }
-            
-            .preview-section {
-                order: 1;
-                min-height: 400px;
-            }
-            
-            h1 {
-                font-size: 2.2em;
-            }
+            .creator-section { grid-template-columns: 1fr; gap: 20px; }
+            .controls { order: 2; max-height: none; }
+            .preview-section { order: 1; min-height: 400px; }
+            h1 { font-size: 2.2em; }
         }
 
         @media (max-width: 480px) {
-            .container {
-                padding: 15px;
-            }
-            
-            .controls {
-                padding: 15px;
-            }
-            
-            .orientation-buttons {
-                flex-direction: column;
-            }
+            .container { padding: 15px; }
+            .controls { padding: 15px; }
+            .orientation-buttons { flex-direction: column; }
         }
     </style>
 </head>
-<body>
+<body onload="init()">
     <div class="snowflakes" id="snowflakes"></div>
 
     <div class="container">
@@ -308,7 +280,6 @@
         
         <div class="creator-section">
             <div class="controls">
-                <!-- Выбор ориентации -->
                 <div class="control-group">
                     <h3>Формат открытки</h3>
                     <div class="orientation-buttons">
@@ -317,15 +288,12 @@
                     </div>
                 </div>
 
-                <!-- Выбор фона -->
                 <div class="control-group">
                     <h3>Фон открытки</h3>
                     <div class="backgrounds-grid" id="backgroundsGrid">
-                        <!-- Фоны будут добавлены через JS -->
-                    </div>
+                        </div>
                 </div>
 
-                <!-- Текст поздравления -->
                 <div class="control-group">
                     <h3>Текст поздравления</h3>
                     <textarea class="text-input" id="greetingText" placeholder="Введите ваше новогоднее поздравление...">С Новым Годом!</textarea>
@@ -337,11 +305,15 @@
                         <div class="font-btn font-badscript" data-font="Bad Script">Bad Script</div>
                     </div>
                     
-                    <h4>Размер шрифта</h4>
+                    <h4>Размер и цвет</h4>
                     <div class="size-buttons">
                         <div class="size-btn" data-size="small">Маленький</div>
                         <div class="size-btn active" data-size="medium">Средний</div>
                         <div class="size-btn" data-size="large">Большой</div>
+                    </div>
+                    <div class="color-control">
+                        <label>Цвет:</label>
+                        <input type="color" id="textColor" value="#ffffff">
                     </div>
                     
                     <h4>Выравнивание текста</h4>
@@ -352,14 +324,12 @@
                     </div>
                 </div>
 
-                <!-- Добавление стикеров -->
                 <div class="control-group">
                     <h3>Новогодние стикеры</h3>
                     <div class="stickers-grid" id="stickersGrid">
-                        <!-- Стикеры будут добавлены через JS -->
-                    </div>
+                        </div>
                     <p style="color: #014d77; font-size: 16px; margin-top: 8px; font-family: 'Caveat', cursive; font-weight: 500;">
-                        Нажмите на стикер чтобы добавить, затем перемещайте и изменяйте размер на открытке
+                        Нажмите на стикер, чтобы добавить. Перемещайте и изменяйте размер на открытке. Выберите элемент, чтобы **удалить (клавиша Delete/Backspace)**.
                     </p>
                 </div>
             </div>
@@ -380,6 +350,11 @@
     </div>
 
     <script>
+        // ИНЖЕНЕРИЯ:
+        // 1. Асинхронность загрузки ресурсов решена предварительным кэшированием в preloadAssets().
+        // 2. Текст, Лого и Стикеры унифицированы в state.draggableItems.
+        // 3. Добавлена логика удаления и выделения элементов.
+
         // Конфигурация - файлы в корне сервера
         const config = {
             orientations: {
@@ -397,15 +372,23 @@
             logo: 'logo3.png'
         };
 
+        // КЭШ ИЗОБРАЖЕНИЙ: Здесь будут храниться загруженные Image-объекты
+        let cachedImages = new Map();
+        let backgroundItem = null;
+        let logoItem = null;
+
         // Состояние приложения
         let state = {
             orientation: 'vertical',
-            selectedBackground: null,
+            selectedBackground: config.backgrounds[0],
+            // Все элементы, которые можно двигать/менять, включая текст и логотип
             draggableItems: [],
             greetingText: 'С Новым Годом!',
             textFont: 'Marck Script',
             textSize: 'medium',
-            textAlign: 'center'
+            textAlign: 'center',
+            textColor: '#ffffff',
+            
         };
 
         // Элементы DOM
@@ -414,22 +397,96 @@
         const backgroundsGrid = document.getElementById('backgroundsGrid');
         const stickersGrid = document.getElementById('stickersGrid');
         const greetingTextInput = document.getElementById('greetingText');
+        const textColorInput = document.getElementById('textColor');
         const snowflakesContainer = document.getElementById('snowflakes');
         const fontBtns = document.querySelectorAll('.font-btn');
         const alignBtns = document.querySelectorAll('.align-btn');
         const sizeBtns = document.querySelectorAll('.size-btn');
 
         // Перетаскиваемые элементы
-        let selectedElement = null;
+        let selectedElementIndex = -1; // Индекс выбранного элемента в draggableItems
         let isDragging = false;
         let isResizing = false;
         let dragStartX, dragStartY;
         let elementStartX, elementStartY;
         let elementStartWidth, elementStartHeight;
-        let originalAspectRatio = {};
-        let cachedImages = new Map();
 
-        // Создание снежинок
+        // --- ИНИЦИАЛИЗАЦИЯ И ЗАГРУЗКА ---
+
+        async function preloadAssets() {
+            const allAssets = [...config.backgrounds, ...config.stickers, config.logo];
+            const promises = allAssets.map(src => {
+                return new Promise((resolve) => {
+                    if (cachedImages.has(src)) {
+                        resolve();
+                        return;
+                    }
+                    const img = new Image();
+                    img.onload = () => {
+                        cachedImages.set(src, img);
+                        resolve();
+                    };
+                    img.onerror = () => {
+                        console.error('Не удалось загрузить ресурс:', src);
+                        resolve(); // Продолжаем, даже если один ресурс не загрузился
+                    };
+                    img.src = src;
+                });
+            });
+            return Promise.all(promises);
+        }
+
+        async function init() {
+            await preloadAssets();
+            createSnowflakes();
+            setupCanvas();
+            loadInitialElements();
+            loadBackgrounds();
+            loadStickers();
+            setupEventListeners();
+            renderCard();
+        }
+
+        function loadInitialElements() {
+             // 1. Создаем Логотип
+            const logoImg = cachedImages.get(config.logo);
+            if (logoImg) {
+                const logoSize = Math.min(config.orientations.vertical.width, config.orientations.vertical.height) * 0.36;
+                const ratio = logoImg.width / logoImg.height;
+                const width = logoSize;
+                const height = logoSize / ratio;
+
+                logoItem = {
+                    type: 'logo',
+                    src: config.logo,
+                    x: config.orientations.vertical.width - width - 20,
+                    y: 20,
+                    width: width,
+                    height: height,
+                    fixedAspect: true // Сохраняем пропорции
+                };
+                state.draggableItems.push(logoItem);
+            }
+
+            // 2. Создаем Текстовый элемент
+            const textItem = {
+                type: 'text',
+                x: config.orientations.vertical.width / 2, // Координаты для центрирования
+                y: config.orientations.vertical.height * 0.4,
+                width: config.orientations.vertical.width * 0.8, // Ширина для переноса
+                height: 0, // Высота будет рассчитана в renderText
+                content: state.greetingText,
+                font: state.textFont,
+                size: state.textSize,
+                align: state.textAlign,
+                color: state.textColor,
+                fixedAspect: false
+            };
+            state.draggableItems.push(textItem);
+        }
+        
+        // ... (Остальные функции JavaScript) ...
+
         function createSnowflakes() {
             const snowflakeCount = 50;
             for (let i = 0; i < snowflakeCount; i++) {
@@ -445,43 +502,53 @@
             }
         }
 
-        // Инициализация
-        function init() {
-            createSnowflakes();
-            setupCanvas();
-            loadBackgrounds();
-            loadStickers();
-            setupEventListeners();
-            renderCard();
-        }
-
         function setupCanvas() {
             const { width, height } = config.orientations[state.orientation];
             canvas.width = width;
             canvas.height = height;
             canvas.style.width = `${width}px`;
             canvas.style.height = `${height}px`;
+
+            // Обновляем координаты элементов при смене ориентации, чтобы они оставались в центре
+            state.draggableItems.forEach(item => {
+                if (item.type === 'text') {
+                     item.x = width / 2;
+                     item.y = height * 0.4;
+                     item.width = width * 0.8;
+                } else if (item.type === 'logo') {
+                    const ratio = cachedImages.get(item.src).width / cachedImages.get(item.src).height;
+                    const logoSize = Math.min(width, height) * 0.36;
+                    item.width = logoSize;
+                    item.height = logoSize / ratio;
+                    item.x = width - item.width - 20;
+                    item.y = 20;
+                } else if (item.type === 'sticker') {
+                    // Просто проверяем, чтобы стикеры не вышли за новые границы
+                    item.x = Math.min(item.x, width - item.width);
+                    item.y = Math.min(item.y, height - item.height);
+                }
+            });
         }
 
         function loadBackgrounds() {
             backgroundsGrid.innerHTML = '';
-            config.backgrounds.forEach((bg, index) => {
+            config.backgrounds.forEach((bg) => {
                 const bgItem = document.createElement('div');
                 bgItem.className = 'background-item';
                 bgItem.style.backgroundImage = `url(${bg})`;
                 bgItem.dataset.background = bg;
                 bgItem.addEventListener('click', () => selectBackground(bg));
                 backgroundsGrid.appendChild(bgItem);
+
+                if (bg === state.selectedBackground) {
+                    bgItem.classList.add('active');
+                }
             });
-            
-            if (config.backgrounds.length > 0) {
-                selectBackground(config.backgrounds[0]);
-            }
         }
 
         function loadStickers() {
             stickersGrid.innerHTML = '';
-            config.stickers.forEach((sticker, index) => {
+            config.stickers.forEach((sticker) => {
                 const stickerItem = document.createElement('div');
                 stickerItem.className = 'sticker-item';
                 stickerItem.style.backgroundImage = `url(${sticker})`;
@@ -506,184 +573,56 @@
             // Текст
             greetingTextInput.addEventListener('input', (e) => {
                 state.greetingText = e.target.value;
+                const textItem = state.draggableItems.find(item => item.type === 'text');
+                if (textItem) textItem.content = state.greetingText;
                 renderCard();
             });
 
-            // Шрифты
-            fontBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    fontBtns.forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    state.textFont = this.dataset.font;
-                    renderCard();
-                });
+            // Цвет текста
+            textColorInput.addEventListener('input', (e) => {
+                state.textColor = e.target.value;
+                const textItem = state.draggableItems.find(item => item.type === 'text');
+                if (textItem) textItem.color = state.textColor;
+                renderCard();
             });
 
-            // Размер шрифта
-            sizeBtns.forEach(btn => {
+            // Шрифты, Размер, Выравнивание
+            [...fontBtns, ...sizeBtns, ...alignBtns].forEach(btn => {
                 btn.addEventListener('click', function() {
-                    sizeBtns.forEach(b => b.classList.remove('active'));
+                    const group = this.parentNode.className.split('-')[0];
+                    const datasetKey = group === 'font' ? 'font' : group === 'size' ? 'size' : 'align';
+                    
+                    document.querySelectorAll(`.${group}-btn`).forEach(b => b.classList.remove('active'));
                     this.classList.add('active');
-                    state.textSize = this.dataset.size;
-                    renderCard();
-                });
-            });
+                    state[`text${datasetKey.charAt(0).toUpperCase() + datasetKey.slice(1)}`] = this.dataset[datasetKey];
 
-            // Выравнивание
-            alignBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    alignBtns.forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    state.textAlign = this.dataset.align;
+                    const textItem = state.draggableItems.find(item => item.type === 'text');
+                    if (textItem) {
+                         textItem[datasetKey] = this.dataset[datasetKey];
+                    }
                     renderCard();
                 });
             });
 
             // Перетаскивание на canvas
             canvas.addEventListener('mousedown', startDrag);
-            canvas.addEventListener('mousemove', drag);
-            canvas.addEventListener('mouseup', stopDrag);
-            canvas.addEventListener('mouseleave', stopDrag);
-
-            // Touch события для мобильных
+            document.addEventListener('mousemove', drag); // Dragging outside canvas for better UX
+            document.addEventListener('mouseup', stopDrag);
+            
             canvas.addEventListener('touchstart', startDragTouch);
-            canvas.addEventListener('touchmove', dragTouch);
-            canvas.addEventListener('touchend', stopDrag);
-        }
+            document.addEventListener('touchmove', dragTouch, { passive: false });
+            document.addEventListener('touchend', stopDrag);
 
-        function startDrag(e) {
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-
-            selectedElement = getElementAt(x, y);
-            if (selectedElement) {
-                isDragging = true;
-                dragStartX = x;
-                dragStartY = y;
-                elementStartX = selectedElement.x;
-                elementStartY = selectedElement.y;
-                elementStartWidth = selectedElement.width;
-                elementStartHeight = selectedElement.height;
-                
-                // Проверяем клик по углу для изменения размера
-                const cornerSize = 15;
-                if (x > selectedElement.x + selectedElement.width - cornerSize && 
-                    y > selectedElement.y + selectedElement.height - cornerSize) {
-                    isResizing = true;
+            // Удаление элемента (Delete/Backspace)
+            document.addEventListener('keydown', (e) => {
+                if (selectedElementIndex !== -1 && (e.key === 'Delete' || e.key === 'Backspace')) {
+                    if (state.draggableItems[selectedElementIndex].type === 'sticker') {
+                        state.draggableItems.splice(selectedElementIndex, 1);
+                        selectedElementIndex = -1;
+                        renderCard();
+                    }
                 }
-                
-                e.preventDefault();
-                canvas.style.cursor = 'grabbing';
-            }
-        }
-
-        function startDragTouch(e) {
-            const touch = e.touches[0];
-            const rect = canvas.getBoundingClientRect();
-            const x = touch.clientX - rect.left;
-            const y = touch.clientY - rect.top;
-
-            selectedElement = getElementAt(x, y);
-            if (selectedElement) {
-                isDragging = true;
-                dragStartX = x;
-                dragStartY = y;
-                elementStartX = selectedElement.x;
-                elementStartY = selectedElement.y;
-                elementStartWidth = selectedElement.width;
-                elementStartHeight = selectedElement.height;
-                
-                const cornerSize = 15;
-                if (x > selectedElement.x + selectedElement.width - cornerSize && 
-                    y > selectedElement.y + selectedElement.height - cornerSize) {
-                    isResizing = true;
-                }
-                
-                e.preventDefault();
-            }
-        }
-
-        function drag(e) {
-            if (!selectedElement || (!isDragging && !isResizing)) return;
-
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-
-            if (isResizing) {
-                // Сохраняем пропорции при изменении размера
-                const deltaX = x - dragStartX;
-                const deltaY = y - dragStartY;
-                const delta = Math.max(deltaX, deltaY);
-                
-                const aspectRatio = originalAspectRatio[selectedElement.src];
-                if (aspectRatio) {
-                    const newWidth = Math.max(40, elementStartWidth + delta);
-                    const newHeight = newWidth / aspectRatio;
-                    selectedElement.width = newWidth;
-                    selectedElement.height = newHeight;
-                }
-            } else if (isDragging) {
-                selectedElement.x = elementStartX + (x - dragStartX);
-                selectedElement.y = elementStartY + (y - dragStartY);
-                
-                // Ограничиваем перемещение в пределах canvas
-                selectedElement.x = Math.max(0, Math.min(canvas.width - selectedElement.width, selectedElement.x));
-                selectedElement.y = Math.max(0, Math.min(canvas.height - selectedElement.height, selectedElement.y));
-            }
-
-            renderCard();
-        }
-
-        function dragTouch(e) {
-            if (!selectedElement || (!isDragging && !isResizing)) return;
-
-            const touch = e.touches[0];
-            const rect = canvas.getBoundingClientRect();
-            const x = touch.clientX - rect.left;
-            const y = touch.clientY - rect.top;
-
-            if (isResizing) {
-                const deltaX = x - dragStartX;
-                const deltaY = y - dragStartY;
-                const delta = Math.max(deltaX, deltaY);
-                
-                const aspectRatio = originalAspectRatio[selectedElement.src];
-                if (aspectRatio) {
-                    const newWidth = Math.max(40, elementStartWidth + delta);
-                    const newHeight = newWidth / aspectRatio;
-                    selectedElement.width = newWidth;
-                    selectedElement.height = newHeight;
-                }
-            } else if (isDragging) {
-                selectedElement.x = elementStartX + (x - dragStartX);
-                selectedElement.y = elementStartY + (y - dragStartY);
-                
-                selectedElement.x = Math.max(0, Math.min(canvas.width - selectedElement.width, selectedElement.x));
-                selectedElement.y = Math.max(0, Math.min(canvas.height - selectedElement.height, selectedElement.y));
-            }
-
-            renderCard();
-            e.preventDefault();
-        }
-
-        function stopDrag() {
-            isDragging = false;
-            isResizing = false;
-            selectedElement = null;
-            canvas.style.cursor = 'move';
-        }
-
-        function getElementAt(x, y) {
-            for (let i = state.draggableItems.length - 1; i >= 0; i--) {
-                const item = state.draggableItems[i];
-                if (x >= item.x && x <= item.x + item.width &&
-                    y >= item.y && y <= item.y + item.height) {
-                    return item;
-                }
-            }
-            return null;
+            });
         }
 
         function selectBackground(background) {
@@ -698,57 +637,261 @@
         }
 
         function addSticker(sticker) {
+            const img = cachedImages.get(sticker);
+            if (!img) return;
+
             const size = Math.min(canvas.width, canvas.height) * 0.15;
-            
-            const img = new Image();
-            img.onload = () => {
-                const aspectRatio = img.width / img.height;
-                let width, height;
-                
-                if (aspectRatio > 1) {
-                    width = size;
-                    height = size / aspectRatio;
-                } else {
-                    height = size;
-                    width = size * aspectRatio;
-                }
-                
-                const newSticker = {
-                    type: 'sticker',
-                    src: sticker,
-                    x: canvas.width / 2 - width / 2,
-                    y: canvas.height / 2 - height / 2,
-                    width: width,
-                    height: height
-                };
-                
-                state.draggableItems.push(newSticker);
-                originalAspectRatio[sticker] = aspectRatio;
-                cachedImages.set(sticker, img);
-                
-                renderCard();
+            const aspectRatio = img.width / img.height;
+            let width, height;
+
+            if (aspectRatio > 1) {
+                width = size;
+                height = size / aspectRatio;
+            } else {
+                height = size;
+                width = size * aspectRatio;
+            }
+
+            const newSticker = {
+                type: 'sticker',
+                src: sticker,
+                x: canvas.width / 2 - width / 2 + Math.random() * 20 - 10, // Сдвиг для видимости
+                y: canvas.height / 2 - height / 2 + Math.random() * 20 - 10,
+                width: width,
+                height: height,
+                fixedAspect: true
             };
-            img.src = sticker;
+
+            state.draggableItems.push(newSticker);
+            selectedElementIndex = state.draggableItems.length - 1; // Выбираем только что добавленный
+            renderCard();
         }
 
+        // --- ЛОГИКА ПЕРЕТАСКИВАНИЯ ---
+
+        function getCanvasMousePosition(e) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: (e.clientX - rect.left) * (canvas.width / rect.width),
+                y: (e.clientY - rect.top) * (canvas.height / rect.height)
+            };
+        }
+        
+        function getCanvasTouchPosition(e) {
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: (touch.clientX - rect.left) * (canvas.width / rect.width),
+                y: (touch.clientY - rect.top) * (canvas.height / rect.height)
+            };
+        }
+
+        function getElementAt(x, y) {
+            // Ищем с конца, чтобы выбрать верхний элемент
+            for (let i = state.draggableItems.length - 1; i >= 0; i--) {
+                const item = state.draggableItems[i];
+                if (item.type === 'text') {
+                    // Для текста нужно специальное определение области (просто для клика)
+                    const textBoundaryX = item.align === 'center' ? item.x - item.width / 2 : item.x;
+                    const textBoundaryWidth = item.width;
+                    const textBoundaryHeight = item.height; // Используем рассчитанную высоту
+
+                    if (x >= textBoundaryX && x <= textBoundaryX + textBoundaryWidth &&
+                        y >= item.y - item.height / 2 && y <= item.y + item.height / 2) {
+                        return i;
+                    }
+                } else if (item.type === 'sticker' || item.type === 'logo') {
+                    if (x >= item.x && x <= item.x + item.width &&
+                        y >= item.y && y <= item.y + item.height) {
+                        return i;
+                    }
+                }
+            }
+            return -1;
+        }
+
+        function startDrag(e) {
+            const { x, y } = getCanvasMousePosition(e);
+            
+            const index = getElementAt(x, y);
+            if (index === -1) {
+                selectedElementIndex = -1; // Сбрасываем выбор, если клик вне элементов
+                renderCard();
+                return;
+            }
+
+            const selectedElement = state.draggableItems[index];
+
+            // Перемещаем выбранный элемент на самый верх для удобства
+            if (index !== state.draggableItems.length - 1) {
+                state.draggableItems.splice(index, 1);
+                state.draggableItems.push(selectedElement);
+                selectedElementIndex = state.draggableItems.length - 1;
+            } else {
+                selectedElementIndex = index;
+            }
+            
+
+            dragStartX = x;
+            dragStartY = y;
+            elementStartX = selectedElement.x;
+            elementStartY = selectedElement.y;
+            elementStartWidth = selectedElement.width;
+            elementStartHeight = selectedElement.height;
+
+            // Проверяем клик по углу для изменения размера (только для стикеров/лого)
+            const cornerSize = 30; // Увеличенный размер для удобства
+            if ((selectedElement.type === 'sticker' || selectedElement.type === 'logo') &&
+                x > selectedElement.x + selectedElement.width - cornerSize &&
+                y > selectedElement.y + selectedElement.height - cornerSize) {
+                isResizing = true;
+                isDragging = false;
+                canvas.style.cursor = 'nwse-resize';
+            } else {
+                isDragging = true;
+                isResizing = false;
+                canvas.style.cursor = 'move';
+            }
+            
+            e.preventDefault();
+            renderCard(); // Отрисовываем рамку выбора
+        }
+
+        function startDragTouch(e) {
+             const { x, y } = getCanvasTouchPosition(e);
+            
+            const index = getElementAt(x, y);
+            if (index === -1) {
+                selectedElementIndex = -1; 
+                renderCard();
+                return;
+            }
+
+            const selectedElement = state.draggableItems[index];
+
+            // Перемещаем выбранный элемент на самый верх
+            if (index !== state.draggableItems.length - 1) {
+                state.draggableItems.splice(index, 1);
+                state.draggableItems.push(selectedElement);
+                selectedElementIndex = state.draggableItems.length - 1;
+            } else {
+                selectedElementIndex = index;
+            }
+
+            dragStartX = x;
+            dragStartY = y;
+            elementStartX = selectedElement.x;
+            elementStartY = selectedElement.y;
+            elementStartWidth = selectedElement.width;
+            elementStartHeight = selectedElement.height;
+
+            const cornerSize = 50; // Больше для тачскринов
+            if ((selectedElement.type === 'sticker' || selectedElement.type === 'logo') &&
+                x > selectedElement.x + selectedElement.width - cornerSize &&
+                y > selectedElement.y + selectedElement.height - cornerSize) {
+                isResizing = true;
+                isDragging = false;
+            } else {
+                isDragging = true;
+                isResizing = false;
+            }
+            
+            e.preventDefault();
+            renderCard();
+        }
+
+        function drag(e) {
+            if (selectedElementIndex === -1 || (!isDragging && !isResizing)) return;
+            
+            // Используем clientX/Y для отслеживания вне canvas, затем преобразуем в координаты canvas
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+
+            const x = (e.clientX - rect.left) * scaleX;
+            const y = (e.clientY - rect.top) * scaleY;
+
+            const selectedElement = state.draggableItems[selectedElementIndex];
+
+            if (isResizing) {
+                const newWidth = Math.max(40, elementStartWidth + (x - dragStartX));
+                
+                if (selectedElement.fixedAspect) {
+                     // Для стикеров и лого сохраняем пропорции
+                     const img = cachedImages.get(selectedElement.src);
+                     const aspectRatio = img.width / img.height;
+                     selectedElement.width = newWidth;
+                     selectedElement.height = newWidth / aspectRatio;
+                } else {
+                    // Для текста меняем только ширину области для переноса (height рассчитывается)
+                    selectedElement.width = Math.min(canvas.width * 0.9, newWidth);
+                }
+            } else if (isDragging) {
+                const deltaX = x - dragStartX;
+                const deltaY = y - dragStartY;
+
+                let newX = elementStartX + deltaX;
+                let newY = elementStartY + deltaY;
+
+                // Ограничиваем перемещение в пределах canvas
+                if (selectedElement.type === 'sticker' || selectedElement.type === 'logo') {
+                    newX = Math.max(0, Math.min(canvas.width - selectedElement.width, newX));
+                    newY = Math.max(0, Math.min(canvas.height - selectedElement.height, newY));
+                    selectedElement.x = newX;
+                    selectedElement.y = newY;
+                } else if (selectedElement.type === 'text') {
+                    // Для текста ограничиваем центральную точку, чтобы текст был в пределах
+                    selectedElement.x = Math.max(selectedElement.width/2, Math.min(canvas.width - selectedElement.width/2, newX));
+                    selectedElement.y = Math.max(selectedElement.height/2, Math.min(canvas.height - selectedElement.height/2, newY));
+                }
+            }
+
+            renderCard();
+        }
+
+        function dragTouch(e) {
+            if (selectedElementIndex === -1 || (!isDragging && !isResizing) || !e.touches || e.touches.length !== 1) return;
+            
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+
+            const x = (touch.clientX - rect.left) * scaleX;
+            const y = (touch.clientY - rect.top) * scaleY;
+            
+            drag({ clientX: touch.clientX, clientY: touch.clientY, preventDefault: e.preventDefault.bind(e) });
+            e.preventDefault();
+        }
+
+        function stopDrag() {
+            isDragging = false;
+            isResizing = false;
+            canvas.style.cursor = 'default';
+        }
+
+
+        // --- ОТРИСОВКА ---
+
         function renderCard() {
+            // Очищаем холст
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Фон с сохранением пропорций
+            // 1. Отрисовка Фона (используем кэшированное изображение)
             if (state.selectedBackground) {
-                const bgImg = new Image();
-                bgImg.onload = () => {
+                const bgImg = cachedImages.get(state.selectedBackground);
+                if (bgImg) {
                     const imgRatio = bgImg.width / bgImg.height;
                     const canvasRatio = canvas.width / canvas.height;
                     
                     let drawWidth, drawHeight, offsetX, offsetY;
                     
-                    if (imgRatio > canvasRatio) {
+                    if (imgRatio > canvasRatio) { // Заполнить по высоте
                         drawHeight = canvas.height;
                         drawWidth = drawHeight * imgRatio;
                         offsetX = (canvas.width - drawWidth) / 2;
                         offsetY = 0;
-                    } else {
+                    } else { // Заполнить по ширине
                         drawWidth = canvas.width;
                         drawHeight = drawWidth / imgRatio;
                         offsetX = 0;
@@ -756,122 +899,119 @@
                     }
                     
                     ctx.drawImage(bgImg, offsetX, offsetY, drawWidth, drawHeight);
-                    renderContent();
-                };
-                bgImg.src = state.selectedBackground;
+                } else {
+                    ctx.fillStyle = '#f0f8ff'; // Если не загрузился, используем светло-голубой
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                }
             } else {
                 ctx.fillStyle = '#ffffff';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
-                renderContent();
+            }
+
+            // 2. Отрисовка Элементов (Стикеры, Лого, Текст)
+            state.draggableItems.forEach((item, index) => {
+                if (item.type === 'sticker' || item.type === 'logo') {
+                    const img = cachedImages.get(item.src);
+                    if (img) {
+                        ctx.drawImage(img, item.x, item.y, item.width, item.height);
+                    }
+                } else if (item.type === 'text') {
+                    renderText(item);
+                }
+
+                // Рисуем рамку выбора и контрольные точки только для выбранного элемента
+                if (index === selectedElementIndex) {
+                    drawSelectionBox(item);
+                }
+            });
+        }
+
+        function drawSelectionBox(item) {
+            ctx.strokeStyle = '#014d77';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]); // Пунктир
+            
+            let boxX, boxY, boxWidth, boxHeight;
+
+            if (item.type === 'sticker' || item.type === 'logo') {
+                boxX = item.x;
+                boxY = item.y;
+                boxWidth = item.width;
+                boxHeight = item.height;
+            } else if (item.type === 'text') {
+                // Для текста используем границы текста
+                boxWidth = item.width;
+                boxHeight = item.height; 
+                boxX = item.align === 'center' ? item.x - boxWidth / 2 : item.x;
+                boxY = item.y - boxHeight / 2;
+            } else {
+                return;
+            }
+
+            ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+            ctx.setLineDash([]); // Сбрасываем пунктир
+
+            // Контрольная точка изменения размера (только для стикеров/лого)
+            if (item.type === 'sticker' || item.type === 'logo') {
+                const handleSize = 12;
+                ctx.fillStyle = '#014d77';
+                ctx.fillRect(boxX + boxWidth - handleSize / 2, boxY + boxHeight - handleSize / 2, handleSize, handleSize);
             }
         }
 
-        function renderContent() {
-            // Логотип увеличен в 3 раза с сохранением пропорций
-            const logoImg = new Image();
-            logoImg.onload = () => {
-                const logoSize = Math.min(canvas.width, canvas.height) * 0.36;
-                const logoRatio = logoImg.width / logoImg.height;
-                let logoWidth, logoHeight;
-                
-                if (logoRatio > 1) {
-                    logoWidth = logoSize;
-                    logoHeight = logoSize / logoRatio;
-                } else {
-                    logoHeight = logoSize;
-                    logoWidth = logoSize * logoRatio;
-                }
-                
-                ctx.drawImage(logoImg, canvas.width - logoWidth - 20, 20, logoWidth, logoHeight);
-            };
-            logoImg.src = config.logo;
-
-            // Стикеры с сохранением пропорций
-            state.draggableItems.forEach(item => {
-                if (item.type === 'sticker') {
-                    const cachedImg = cachedImages.get(item.src);
-                    if (cachedImg) {
-                        ctx.drawImage(cachedImg, item.x, item.y, item.width, item.height);
-                        
-                        // Рисуем уголок для изменения размера
-                        ctx.fillStyle = '#014d77';
-                        ctx.fillRect(item.x + item.width - 8, item.y + item.height - 8, 8, 8);
-                    }
-                }
-            });
-
-            renderText();
-        }
-
-        function getFontSize() {
-            switch(state.textSize) {
+        function getFontSize(size) {
+            switch(size) {
                 case 'small': return Math.min(canvas.width, canvas.height) * 0.04;
                 case 'large': return Math.min(canvas.width, canvas.height) * 0.07;
                 default: return Math.min(canvas.width, canvas.height) * 0.05;
             }
         }
 
-        function renderText() {
-            if (state.greetingText) {
-                ctx.fillStyle = '#ffffff';
-                
-                let fontFamily;
-                switch(state.textFont) {
-                    case 'Marck Script':
-                        fontFamily = "'Marck Script', cursive";
-                        break;
-                    case 'Caveat':
-                        fontFamily = "'Caveat', cursive";
-                        break;
-                    case 'Bad Script':
-                        fontFamily = "'Bad Script', cursive";
-                        break;
-                    default:
-                        fontFamily = "'Marck Script', cursive";
-                }
-                
-                const fontSize = getFontSize();
-                ctx.textAlign = state.textAlign;
-                ctx.textBaseline = 'middle';
-                
-                // Улучшенный автоперенос текста
-                const maxWidth = canvas.width * 0.8;
-                const lines = wrapTextImproved(ctx, state.greetingText, maxWidth, fontSize, fontFamily);
-                const lineHeight = fontSize * 1.3;
-                
-                let startY;
-                if (state.textAlign === 'center') {
-                    startY = canvas.height / 2 - (lines.length * lineHeight) / 2;
-                } else {
-                    startY = canvas.height * 0.3;
-                }
-                
-                let xPos;
-                switch(state.textAlign) {
-                    case 'left':
-                        xPos = canvas.width * 0.1;
-                        break;
-                    case 'right':
-                        xPos = canvas.width * 0.9;
-                        break;
-                    default:
-                        xPos = canvas.width / 2;
-                }
-                
-                // Рисуем текст
-                lines.forEach((line, index) => {
-                    if (line.text.trim()) {
-                        ctx.font = `bold ${line.fontSize}px ${fontFamily}`;
-                        ctx.fillText(line.text, xPos, startY + index * lineHeight);
-                    }
-                });
+        function renderText(item) {
+            if (!item.content) return;
+
+            ctx.fillStyle = item.color;
+            
+            let fontFamily;
+            switch(item.font) {
+                case 'Marck Script': fontFamily = "'Marck Script', cursive"; break;
+                case 'Caveat': fontFamily = "'Caveat', cursive"; break;
+                case 'Bad Script': fontFamily = "'Bad Script', cursive"; break;
+                default: fontFamily = "'Marck Script', cursive";
             }
+            
+            const fontSize = getFontSize(item.size);
+            const lineHeight = fontSize * 1.3;
+            const maxWidth = item.width; // Используем ширину элемента
+            
+            ctx.textAlign = item.align;
+            ctx.textBaseline = 'middle';
+            
+            const lines = wrapText(ctx, item.content, maxWidth, fontSize, fontFamily);
+
+            // Обновляем высоту элемента для корректного перетаскивания и рамки
+            item.height = lines.length * lineHeight;
+            
+            let xPos = item.x; // x - это центральная координата для элемента
+            if (item.align === 'left') xPos = item.x - item.width / 2 + (canvas.width * 0.02); // Небольшой отступ
+            if (item.align === 'right') xPos = item.x + item.width / 2 - (canvas.width * 0.02);
+
+            let startY = item.y - (item.height / 2) + (lineHeight / 2);
+
+            lines.forEach((line, index) => {
+                if (line.text.trim()) {
+                    ctx.font = `bold ${fontSize}px ${fontFamily}`;
+                    ctx.fillText(line.text, xPos, startY + index * lineHeight);
+                }
+            });
         }
 
-        function wrapTextImproved(context, text, maxWidth, baseFontSize, fontFamily) {
+        // Вспомогательная функция для переноса текста
+        function wrapText(context, text, maxWidth, fontSize, fontFamily) {
             const paragraphs = text.split('\n');
             const lines = [];
-            let currentFontSize = baseFontSize;
+            
+            context.font = `bold ${fontSize}px ${fontFamily}`;
 
             for (const paragraph of paragraphs) {
                 const words = paragraph.split(' ');
@@ -879,220 +1019,167 @@
 
                 for (let i = 0; i < words.length; i++) {
                     const testLine = currentLine ? currentLine + ' ' + words[i] : words[i];
-                    context.font = `bold ${currentFontSize}px ${fontFamily}`;
                     const metrics = context.measureText(testLine);
                     
-                    if (metrics.width > maxWidth) {
-                        if (currentLine === '') {
-                            // Слово слишком длинное - разбиваем посимвольно
-                            let word = words[i];
-                            let testWord = '';
-                            for (let j = 0; j < word.length; j++) {
-                                testWord += word[j];
-                                context.font = `bold ${currentFontSize}px ${fontFamily}`;
-                                if (context.measureText(testWord).width > maxWidth) {
-                                    if (testWord.length > 1) {
-                                        lines.push({ text: testWord.slice(0, -1), fontSize: currentFontSize });
-                                        word = word.slice(j - 1);
-                                        testWord = word[0] || '';
-                                        j = 0;
-                                    }
-                                }
-                            }
-                            if (testWord) {
-                                currentLine = testWord;
-                            }
-                        } else {
-                            lines.push({ text: currentLine, fontSize: currentFontSize });
-                            currentLine = words[i];
-                        }
+                    if (metrics.width > maxWidth && currentLine !== '') {
+                        lines.push({ text: currentLine, fontSize: fontSize });
+                        currentLine = words[i];
                     } else {
                         currentLine = testLine;
                     }
                 }
-                
                 if (currentLine) {
-                    lines.push({ text: currentLine, fontSize: currentFontSize });
-                }
-                
-                // Добавляем пустую строку между параграфами
-                if (paragraphs.length > 1 && paragraph !== paragraphs[paragraphs.length - 1]) {
-                    lines.push({ text: '', fontSize: currentFontSize });
+                    lines.push({ text: currentLine, fontSize: fontSize });
                 }
             }
-            
             return lines;
         }
 
+        // --- ДЕЙСТВИЯ ---
+
         function downloadCard() {
-            const scale = 2;
+            // Для скачивания используем увеличенное разрешение (2x) для "HD"
+            const scaleFactor = 2;
+            const hdCanvas = document.createElement('canvas');
+            hdCanvas.width = canvas.width * scaleFactor;
+            hdCanvas.height = canvas.height * scaleFactor;
+            const hdCtx = hdCanvas.getContext('2d');
             
-            const { width, height } = config.orientations[state.orientation];
-            const highResCanvas = document.createElement('canvas');
-            highResCanvas.width = width * scale;
-            highResCanvas.height = height * scale;
-            const highResCtx = highResCanvas.getContext('2d');
+            // Масштабируем всю отрисовку
+            hdCtx.scale(scaleFactor, scaleFactor);
             
-            highResCtx.scale(scale, scale);
-            highResCtx.imageSmoothingEnabled = true;
-            highResCtx.imageSmoothingQuality = 'high';
-            
-            renderHighResCard(highResCtx).then(() => {
-                const link = document.createElement('a');
-                link.download = 'новогодняя-открытка.png';
-                link.href = highResCanvas.toDataURL('image/png', 0.95);
-                link.click();
-            });
+            // Выполняем отрисовку с учетом масштаба
+            renderCardHD(hdCtx, hdCanvas.width / scaleFactor, hdCanvas.height / scaleFactor);
+
+            // Скачиваем
+            const dataURL = hdCanvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.href = dataURL;
+            link.download = 'novogodnyaya-otkrytka.png';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // Возвращаем масштаб на обычный canvas
+            ctx.scale(1 / scaleFactor, 1 / scaleFactor);
         }
 
-        function renderHighResCard(ctx) {
-            return new Promise((resolve) => {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-                if (state.selectedBackground) {
-                    const bgImg = new Image();
-                    bgImg.onload = () => {
-                        const imgRatio = bgImg.width / bgImg.height;
-                        const canvasRatio = canvas.width / canvas.height;
-                        
-                        let drawWidth, drawHeight, offsetX, offsetY;
-                        
-                        if (imgRatio > canvasRatio) {
-                            drawHeight = canvas.height;
-                            drawWidth = drawHeight * imgRatio;
-                            offsetX = (canvas.width - drawWidth) / 2;
-                            offsetY = 0;
-                        } else {
-                            drawWidth = canvas.width;
-                            drawHeight = drawWidth / imgRatio;
-                            offsetX = 0;
-                            offsetY = (canvas.height - drawHeight) / 2;
-                        }
-                        
-                        ctx.drawImage(bgImg, offsetX, offsetY, drawWidth, drawHeight);
-                        renderHighResContent(ctx).then(resolve);
-                    };
-                    bgImg.src = state.selectedBackground;
+        // Функция рендеринга для HD (почти идентична renderCard, но использует другой контекст)
+        function renderCardHD(hdCtx, hdWidth, hdHeight) {
+            // 1. Фон
+            if (state.selectedBackground) {
+                const bgImg = cachedImages.get(state.selectedBackground);
+                if (bgImg) {
+                    const imgRatio = bgImg.width / bgImg.height;
+                    const canvasRatio = hdWidth / hdHeight;
+                    
+                    let drawWidth, drawHeight, offsetX, offsetY;
+                    
+                    if (imgRatio > canvasRatio) { 
+                        drawHeight = hdHeight;
+                        drawWidth = drawHeight * imgRatio;
+                        offsetX = (hdWidth - drawWidth) / 2;
+                        offsetY = 0;
+                    } else { 
+                        drawWidth = hdWidth;
+                        drawHeight = drawWidth / imgRatio;
+                        offsetX = 0;
+                        offsetY = (hdHeight - drawHeight) / 2;
+                    }
+                    
+                    hdCtx.drawImage(bgImg, offsetX, offsetY, drawWidth, drawHeight);
                 } else {
-                    ctx.fillStyle = '#ffffff';
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    renderHighResContent(ctx).then(resolve);
+                    hdCtx.fillStyle = '#f0f8ff';
+                    hdCtx.fillRect(0, 0, hdWidth, hdHeight);
                 }
-            });
-        }
-
-        function renderHighResContent(ctx) {
-            return new Promise((resolve) => {
-                const promises = [];
-                
-                // Логотип увеличенный
-                const logoImg = new Image();
-                promises.push(new Promise(logoResolve => {
-                    logoImg.onload = () => {
-                        const logoSize = Math.min(canvas.width, canvas.height) * 0.36;
-                        const logoRatio = logoImg.width / logoImg.height;
-                        let logoWidth, logoHeight;
-                        
-                        if (logoRatio > 1) {
-                            logoWidth = logoSize;
-                            logoHeight = logoSize / logoRatio;
-                        } else {
-                            logoHeight = logoSize;
-                            logoWidth = logoSize * logoRatio;
-                        }
-                        
-                        ctx.drawImage(logoImg, canvas.width - logoWidth - 20, 20, logoWidth, logoHeight);
-                        logoResolve();
-                    };
-                    logoImg.src = config.logo;
-                }));
-
-                // Стикеры в высоком качестве
-                state.draggableItems.forEach(item => {
-                    if (item.type === 'sticker') {
-                        const img = new Image();
-                        promises.push(new Promise(stickerResolve => {
-                            img.onload = () => {
-                                ctx.drawImage(img, item.x, item.y, item.width, item.height);
-                                stickerResolve();
-                            };
-                            img.src = item.src;
-                        }));
-                    }
-                });
-
-                // Текст
-                if (state.greetingText) {
-                    ctx.fillStyle = '#ffffff';
-                    
-                    let fontFamily;
-                    switch(state.textFont) {
-                        case 'Marck Script':
-                            fontFamily = "'Marck Script', cursive";
-                            break;
-                        case 'Caveat':
-                            fontFamily = "'Caveat', cursive";
-                            break;
-                        case 'Bad Script':
-                            fontFamily = "'Bad Script', cursive";
-                            break;
-                        default:
-                            fontFamily = "'Marck Script', cursive";
-                    }
-                    
-                    const fontSize = getFontSize();
-                    ctx.textAlign = state.textAlign;
-                    ctx.textBaseline = 'middle';
-                    
-                    const maxWidth = canvas.width * 0.8;
-                    const lines = wrapTextImproved(ctx, state.greetingText, maxWidth, fontSize, fontFamily);
-                    const lineHeight = fontSize * 1.3;
-                    
-                    let startY;
-                    if (state.textAlign === 'center') {
-                        startY = canvas.height / 2 - (lines.length * lineHeight) / 2;
-                    } else {
-                        startY = canvas.height * 0.3;
-                    }
-                    
-                    let xPos;
-                    switch(state.textAlign) {
-                        case 'left':
-                            xPos = canvas.width * 0.1;
-                            break;
-                        case 'right':
-                            xPos = canvas.width * 0.9;
-                            break;
-                        default:
-                            xPos = canvas.width / 2;
-                    }
-                    
-                    lines.forEach((line, index) => {
-                        if (line.text.trim()) {
-                            ctx.font = `bold ${line.fontSize}px ${fontFamily}`;
-                            ctx.fillText(line.text, xPos, startY + index * lineHeight);
-                        }
-                    });
-                }
-
-                Promise.all(promises).then(resolve);
-            });
-        }
-
-        function clearCard() {
-            state.draggableItems = [];
-            state.greetingText = 'С Новым Годом!';
-            greetingTextInput.value = 'С Новым Годом!';
-            
-            if (config.backgrounds.length > 0) {
-                selectBackground(config.backgrounds[0]);
             }
             
-            renderCard();
+            // 2. Элементы
+            state.draggableItems.forEach(item => {
+                 if (item.type === 'sticker' || item.type === 'logo') {
+                    const img = cachedImages.get(item.src);
+                    if (img) {
+                        hdCtx.drawImage(img, item.x, item.y, item.width, item.height);
+                    }
+                } else if (item.type === 'text') {
+                    renderTextHD(hdCtx, item, hdWidth, hdHeight);
+                }
+            });
+        }
+        
+        // Отдельная функция для рендеринга текста в HD, чтобы пересчитать размер
+        function renderTextHD(hdCtx, item, hdWidth, hdHeight) {
+             if (!item.content) return;
+
+            hdCtx.fillStyle = item.color;
+            
+            let fontFamily;
+            switch(item.font) {
+                case 'Marck Script': fontFamily = "'Marck Script', cursive"; break;
+                case 'Caveat': fontFamily = "'Caveat', cursive"; break;
+                case 'Bad Script': fontFamily = "'Bad Script', cursive"; break;
+                default: fontFamily = "'Marck Script', cursive";
+            }
+            
+            // Расчет размера шрифта на основе HD-размеров
+            function getFontSizeHD(size) {
+                 switch(size) {
+                    case 'small': return Math.min(hdWidth, hdHeight) * 0.04;
+                    case 'large': return Math.min(hdWidth, hdHeight) * 0.07;
+                    default: return Math.min(hdWidth, hdHeight) * 0.05;
+                }
+            }
+            
+            const fontSize = getFontSizeHD(item.size);
+            const lineHeight = fontSize * 1.3;
+            const maxWidth = item.width; 
+            
+            hdCtx.textAlign = item.align;
+            hdCtx.textBaseline = 'middle';
+            
+            const lines = wrapText(hdCtx, item.content, maxWidth, fontSize, fontFamily);
+            
+            let xPos = item.x; 
+            if (item.align === 'left') xPos = item.x - item.width / 2 + (hdWidth * 0.02); 
+            if (item.align === 'right') xPos = item.x + item.width / 2 - (hdWidth * 0.02);
+
+            let startY = item.y - (item.height / 2) + (lineHeight / 2);
+
+            lines.forEach((line, index) => {
+                if (line.text.trim()) {
+                    hdCtx.font = `bold ${fontSize}px ${fontFamily}`;
+                    hdCtx.fillText(line.text, xPos, startY + index * lineHeight);
+                }
+            });
         }
 
-        // Запуск приложения
-        window.addEventListener('load', init);
+
+        function clearCard() {
+            const initialText = state.greetingText;
+            
+            // Сброс всех стикеров и оставляем только текст и логотип
+            state.draggableItems = state.draggableItems.filter(item => item.type === 'text' || item.type === 'logo');
+
+            // Сброс текста к изначальному
+            state.greetingText = 'С Новым Годом!';
+            greetingTextInput.value = state.greetingText;
+
+            // Сброс выбора
+            selectedElementIndex = -1;
+            
+            // Сброс стилей текста к активным в UI
+            const textItem = state.draggableItems.find(item => item.type === 'text');
+            if (textItem) {
+                 textItem.content = state.greetingText;
+                 textItem.font = state.textFont;
+                 textItem.size = state.textSize;
+                 textItem.align = state.textAlign;
+                 textItem.color = state.textColor;
+            }
+
+            // Перерисовка
+            renderCard();
+        }
     </script>
 </body>
 </html>
