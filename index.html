@@ -238,13 +238,13 @@
                 <!-- Текст поздравления -->
                 <div class="control-group">
                     <h3>Текст поздравления</h3>
-                    <textarea class="text-input" id="greetingText" placeholder="Введите ваше новогоднее поздравление..."></textarea>
+                    <textarea class="text-input" id="greetingText" placeholder="Введите ваше новогоднее поздравление...">С Новым Годом!</textarea>
                 </div>
             </div>
 
             <div class="preview-section">
                 <canvas id="cardCanvas"></canvas>
-                <img src="logo.png" alt="Логотип" class="logo" id="cardLogo">
+                <img src="./images/logo3.png" alt="Логотип" class="logo" id="cardLogo">
             </div>
         </div>
 
@@ -259,7 +259,7 @@
     </div>
 
     <script>
-        // Конфигурация
+        // Конфигурация - ВАШ ФОРМАТ ДАННЫХ
         const config = {
             orientations: {
                 vertical: { width: 400, height: 600 },
@@ -280,7 +280,8 @@
             orientation: 'vertical',
             selectedBackground: null,
             selectedStickers: [],
-            greetingText: ''
+            greetingText: 'С Новым Годом!',
+            draggableStickers: []
         };
 
         // Элементы DOM
@@ -313,11 +314,16 @@
             config.backgrounds.forEach((bg, index) => {
                 const bgItem = document.createElement('div');
                 bgItem.className = 'background-item';
-                bgItem.style.backgroundImage = `url(${bg})`;
+                bgItem.style.backgroundImage = `url(./backgrounds/${bg})`;
                 bgItem.dataset.background = bg;
                 bgItem.addEventListener('click', () => selectBackground(bg));
                 backgroundsGrid.appendChild(bgItem);
             });
+            
+            // Выбираем первый фон по умолчанию
+            if (config.backgrounds.length > 0) {
+                selectBackground(config.backgrounds[0]);
+            }
         }
 
         function loadStickers() {
@@ -325,7 +331,7 @@
             config.stickers.forEach((sticker, index) => {
                 const stickerItem = document.createElement('div');
                 stickerItem.className = 'sticker-item';
-                stickerItem.style.backgroundImage = `url(${sticker})`;
+                stickerItem.style.backgroundImage = `url(./stickers/${sticker})`;
                 stickerItem.dataset.sticker = sticker;
                 stickerItem.addEventListener('click', () => toggleSticker(sticker));
                 stickersGrid.appendChild(stickerItem);
@@ -394,7 +400,7 @@
                     ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
                     renderContent();
                 };
-                bgImg.src = state.selectedBackground;
+                bgImg.src = `./backgrounds/${state.selectedBackground}`;
             } else {
                 ctx.fillStyle = '#ffffff';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -412,7 +418,7 @@
                     const y = Math.random() * (canvas.height - size);
                     ctx.drawImage(img, x, y, size, size);
                 };
-                img.src = sticker;
+                img.src = `./stickers/${sticker}`;
             });
 
             // Текст
@@ -432,10 +438,12 @@
             }
 
             // Логотип
-            if (logo.complete && logo.naturalHeight !== 0) {
+            const logoImg = new Image();
+            logoImg.onload = () => {
                 const logoSize = Math.min(canvas.width, canvas.height) * 0.1;
-                ctx.drawImage(logo, canvas.width - logoSize - 10, 10, logoSize, logoSize);
-            }
+                ctx.drawImage(logoImg, canvas.width - logoSize - 10, 10, logoSize, logoSize);
+            };
+            logoImg.src = './images/logo3.png';
         }
 
         function wrapText(context, text, maxWidth) {
@@ -473,6 +481,11 @@
             document.querySelectorAll('.background-item, .sticker-item').forEach(item => {
                 item.classList.remove('active');
             });
+            
+            // Выбираем первый фон снова
+            if (config.backgrounds.length > 0) {
+                selectBackground(config.backgrounds[0]);
+            }
             
             renderCard();
         }
