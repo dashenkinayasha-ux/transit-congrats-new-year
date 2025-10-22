@@ -163,13 +163,13 @@
             font-weight: 500;
         }
 
-        .font-buttons, .align-buttons {
+        .font-buttons, .align-buttons, .size-buttons {
             display: flex;
             gap: 8px;
             margin-top: 8px;
         }
 
-        .font-btn, .align-btn {
+        .font-btn, .align-btn, .size-btn {
             flex: 1;
             padding: 10px;
             background: rgba(1, 77, 119, 0.1);
@@ -183,7 +183,7 @@
             font-weight: 600;
         }
 
-        .font-btn.active, .align-btn.active {
+        .font-btn.active, .align-btn.active, .size-btn.active {
             background: #014d77;
             color: white;
             border-color: #014d77;
@@ -337,6 +337,13 @@
                         <div class="font-btn font-badscript" data-font="Bad Script">Bad Script</div>
                     </div>
                     
+                    <h4>Размер шрифта</h4>
+                    <div class="size-buttons">
+                        <div class="size-btn" data-size="small">Маленький</div>
+                        <div class="size-btn active" data-size="medium">Средний</div>
+                        <div class="size-btn" data-size="large">Большой</div>
+                    </div>
+                    
                     <h4>Выравнивание текста</h4>
                     <div class="align-buttons">
                         <div class="align-btn active" data-align="center">По центру</div>
@@ -351,7 +358,9 @@
                     <div class="stickers-grid" id="stickersGrid">
                         <!-- Стикеры будут добавлены через JS -->
                     </div>
-                    <p style="color: #014d77; font-size: 16px; margin-top: 8px; font-family: 'Caveat', cursive; font-weight: 500;">Нажмите на стикер чтобы добавить, затем перемещайте и изменяйте размер на открытке</p>
+                    <p style="color: #014d77; font-size: 16px; margin-top: 8px; font-family: 'Caveat', cursive; font-weight: 500;">
+                        Нажмите на стикер чтобы добавить, затем перемещайте и изменяйте размер на открытке
+                    </p>
                 </div>
             </div>
 
@@ -395,6 +404,7 @@
             draggableItems: [],
             greetingText: 'С Новым Годом!',
             textFont: 'Marck Script',
+            textSize: 'medium',
             textAlign: 'center'
         };
 
@@ -407,6 +417,7 @@
         const snowflakesContainer = document.getElementById('snowflakes');
         const fontBtns = document.querySelectorAll('.font-btn');
         const alignBtns = document.querySelectorAll('.align-btn');
+        const sizeBtns = document.querySelectorAll('.size-btn');
 
         // Перетаскиваемые элементы
         let selectedElement = null;
@@ -416,7 +427,7 @@
         let elementStartX, elementStartY;
         let elementStartWidth, elementStartHeight;
         let originalAspectRatio = {};
-        let cachedImages = new Map(); // Кэш изображений для устранения мигания
+        let cachedImages = new Map();
 
         // Создание снежинок
         function createSnowflakes() {
@@ -463,7 +474,6 @@
                 backgroundsGrid.appendChild(bgItem);
             });
             
-            // Выбираем первый фон по умолчанию
             if (config.backgrounds.length > 0) {
                 selectBackground(config.backgrounds[0]);
             }
@@ -505,6 +515,16 @@
                     fontBtns.forEach(b => b.classList.remove('active'));
                     this.classList.add('active');
                     state.textFont = this.dataset.font;
+                    renderCard();
+                });
+            });
+
+            // Размер шрифта
+            sizeBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    sizeBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    state.textSize = this.dataset.size;
                     renderCard();
                 });
             });
@@ -554,6 +574,7 @@
                 }
                 
                 e.preventDefault();
+                canvas.style.cursor = 'grabbing';
             }
         }
 
@@ -651,6 +672,7 @@
             isDragging = false;
             isResizing = false;
             selectedElement = null;
+            canvas.style.cursor = 'move';
         }
 
         function getElementAt(x, y) {
@@ -678,7 +700,6 @@
         function addSticker(sticker) {
             const size = Math.min(canvas.width, canvas.height) * 0.15;
             
-            // Загружаем изображение для получения пропорций
             const img = new Image();
             img.onload = () => {
                 const aspectRatio = img.width / img.height;
@@ -703,8 +724,6 @@
                 
                 state.draggableItems.push(newSticker);
                 originalAspectRatio[sticker] = aspectRatio;
-                
-                // Кэшируем изображение
                 cachedImages.set(sticker, img);
                 
                 renderCard();
@@ -767,7 +786,7 @@
             };
             logoImg.src = config.logo;
 
-            // Стикеры с сохранением пропорций (используем кэш)
+            // Стикеры с сохранением пропорций
             state.draggableItems.forEach(item => {
                 if (item.type === 'sticker') {
                     const cachedImg = cachedImages.get(item.src);
@@ -777,14 +796,6 @@
                         // Рисуем уголок для изменения размера
                         ctx.fillStyle = '#014d77';
                         ctx.fillRect(item.x + item.width - 8, item.y + item.height - 8, 8, 8);
-                    } else {
-                        const img = new Image();
-                        img.onload = () => {
-                            ctx.drawImage(img, item.x, item.y, item.width, item.height);
-                            ctx.fillStyle = '#014d77';
-                            ctx.fillRect(item.x + item.width - 8, item.y + item.height - 8, 8, 8);
-                        };
-                        img.src = item.src;
                     }
                 }
             });
@@ -792,12 +803,18 @@
             renderText();
         }
 
+        function getFontSize() {
+            switch(state.textSize) {
+                case 'small': return Math.min(canvas.width, canvas.height) * 0.04;
+                case 'large': return Math.min(canvas.width, canvas.height) * 0.07;
+                default: return Math.min(canvas.width, canvas.height) * 0.05;
+            }
+        }
+
         function renderText() {
-            // Текст без обводки
             if (state.greetingText) {
                 ctx.fillStyle = '#ffffff';
                 
-                // Устанавливаем шрифт
                 let fontFamily;
                 switch(state.textFont) {
                     case 'Marck Script':
@@ -813,14 +830,14 @@
                         fontFamily = "'Marck Script', cursive";
                 }
                 
-                const baseFontSize = Math.min(canvas.width, canvas.height) * 0.05;
+                const fontSize = getFontSize();
                 ctx.textAlign = state.textAlign;
                 ctx.textBaseline = 'middle';
                 
                 // Улучшенный автоперенос текста
                 const maxWidth = canvas.width * 0.8;
-                const lines = wrapTextImproved(ctx, state.greetingText, maxWidth, baseFontSize, fontFamily);
-                const lineHeight = baseFontSize * 1.3;
+                const lines = wrapTextImproved(ctx, state.greetingText, maxWidth, fontSize, fontFamily);
+                const lineHeight = fontSize * 1.3;
                 
                 let startY;
                 if (state.textAlign === 'center') {
@@ -908,8 +925,7 @@
         }
 
         function downloadCard() {
-            // Оптимальное разрешение для HD качества
-            const scale = 2; // 2x увеличение для баланса качества и размера
+            const scale = 2;
             
             const { width, height } = config.orientations[state.orientation];
             const highResCanvas = document.createElement('canvas');
@@ -917,16 +933,14 @@
             highResCanvas.height = height * scale;
             const highResCtx = highResCanvas.getContext('2d');
             
-            // Устанавливаем высокое качество
             highResCtx.scale(scale, scale);
             highResCtx.imageSmoothingEnabled = true;
             highResCtx.imageSmoothingQuality = 'high';
             
-            // Рендерим на высоком разрешении
             renderHighResCard(highResCtx).then(() => {
                 const link = document.createElement('a');
                 link.download = 'новогодняя-открытка.png';
-                link.href = highResCanvas.toDataURL('image/png', 0.95); // Немного сжимаем для уменьшения размера
+                link.href = highResCanvas.toDataURL('image/png', 0.95);
                 link.click();
             });
         }
@@ -935,7 +949,6 @@
             return new Promise((resolve) => {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-                // Фон
                 if (state.selectedBackground) {
                     const bgImg = new Image();
                     bgImg.onload = () => {
@@ -1027,13 +1040,13 @@
                             fontFamily = "'Marck Script', cursive";
                     }
                     
-                    const baseFontSize = Math.min(canvas.width, canvas.height) * 0.05;
+                    const fontSize = getFontSize();
                     ctx.textAlign = state.textAlign;
                     ctx.textBaseline = 'middle';
                     
                     const maxWidth = canvas.width * 0.8;
-                    const lines = wrapTextImproved(ctx, state.greetingText, maxWidth, baseFontSize, fontFamily);
-                    const lineHeight = baseFontSize * 1.3;
+                    const lines = wrapTextImproved(ctx, state.greetingText, maxWidth, fontSize, fontFamily);
+                    const lineHeight = fontSize * 1.3;
                     
                     let startY;
                     if (state.textAlign === 'center') {
@@ -1071,7 +1084,6 @@
             state.greetingText = 'С Новым Годом!';
             greetingTextInput.value = 'С Новым Годом!';
             
-            // Выбираем первый фон снова
             if (config.backgrounds.length > 0) {
                 selectBackground(config.backgrounds[0]);
             }
