@@ -13,7 +13,7 @@
         }
 
         body {
-            font-family: 'Marck Script', cursive;
+            font-family: 'Caveat', cursive;
             background: linear-gradient(135deg, #1a2a6c, #2c3e50);
             min-height: 100vh;
             padding: 20px;
@@ -64,8 +64,9 @@
             text-align: center;
             color: #014d77;
             margin-bottom: 30px;
-            font-size: 2.5em;
+            font-size: 2.8em;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            font-weight: 700;
         }
 
         .creator-section {
@@ -91,13 +92,15 @@
         .control-group h3 {
             color: #014d77;
             margin-bottom: 15px;
-            font-size: 1.2em;
+            font-size: 1.4em;
+            font-weight: 700;
         }
 
         .control-group h4 {
             color: #014d77;
             margin: 15px 0 8px 0;
-            font-size: 1em;
+            font-size: 1.1em;
+            font-weight: 600;
         }
 
         .orientation-buttons {
@@ -107,15 +110,16 @@
 
         .orientation-btn {
             flex: 1;
-            padding: 10px;
+            padding: 12px;
             border: 2px solid #dee2e6;
             background: white;
             border-radius: 8px;
             cursor: pointer;
             text-align: center;
             transition: all 0.3s;
-            font-size: 14px;
-            font-family: 'Marck Script', cursive;
+            font-size: 16px;
+            font-family: 'Caveat', cursive;
+            font-weight: 600;
         }
 
         .orientation-btn.active {
@@ -152,10 +156,11 @@
             padding: 12px;
             border: 2px solid #dee2e6;
             border-radius: 8px;
-            font-size: 14px;
+            font-size: 18px;
             resize: vertical;
             min-height: 80px;
-            font-family: 'Marck Script', cursive;
+            font-family: 'Caveat', cursive;
+            font-weight: 500;
         }
 
         .font-buttons, .align-buttons {
@@ -166,15 +171,16 @@
 
         .font-btn, .align-btn {
             flex: 1;
-            padding: 8px;
+            padding: 10px;
             background: rgba(1, 77, 119, 0.1);
             border-radius: 5px;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s;
-            font-size: 12px;
+            font-size: 14px;
             border: 1px solid #dee2e6;
-            font-family: 'Marck Script', cursive;
+            font-family: 'Caveat', cursive;
+            font-weight: 600;
         }
 
         .font-btn.active, .align-btn.active {
@@ -213,7 +219,7 @@
             border: 2px dashed #dee2e6;
             border-radius: 10px;
             background: white;
-            cursor: crosshair;
+            cursor: move;
         }
 
         .actions {
@@ -226,14 +232,15 @@
             padding: 15px 30px;
             border: none;
             border-radius: 10px;
-            font-size: 16px;
+            font-size: 18px;
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s;
             display: flex;
             align-items: center;
             gap: 8px;
-            font-family: 'Marck Script', cursive;
+            font-family: 'Caveat', cursive;
+            font-weight: 700;
         }
 
         .btn-download {
@@ -274,7 +281,7 @@
             }
             
             h1 {
-                font-size: 2em;
+                font-size: 2.2em;
             }
         }
 
@@ -344,7 +351,7 @@
                     <div class="stickers-grid" id="stickersGrid">
                         <!-- Стикеры будут добавлены через JS -->
                     </div>
-                    <p style="color: #014d77; font-size: 12px; margin-top: 8px; font-family: 'Marck Script', cursive;">Нажмите на стикер чтобы добавить, затем перемещайте и изменяйте размер на открытке</p>
+                    <p style="color: #014d77; font-size: 16px; margin-top: 8px; font-family: 'Caveat', cursive; font-weight: 500;">Нажмите на стикер чтобы добавить, затем перемещайте и изменяйте размер на открытке</p>
                 </div>
             </div>
 
@@ -355,7 +362,7 @@
 
         <div class="actions">
             <button class="btn btn-download" onclick="downloadCard()">
-                💾 Скачать открытку (4K)
+                💾 Скачать открытку (HD)
             </button>
             <button class="btn btn-clear" onclick="clearCard()">
                 🗑️ Очистить
@@ -375,8 +382,8 @@
                 'bg5.png', 'bg6.png', 'bg7.png', 'bg8.png'
             ],
             stickers: [
-                'st1.png', 'st2.png', 'st3.png', 'st4.png',
-                'st5.png', 'st6.png', 'st7.png', 'st8.png'
+                'sticker1.png', 'sticker2.png', 'sticker3.png', 'sticker4.png',
+                'sticker5.png', 'sticker6.png', 'sticker7.png', 'sticker8.png'
             ],
             logo: 'logo3.png'
         };
@@ -409,6 +416,7 @@
         let elementStartX, elementStartY;
         let elementStartWidth, elementStartHeight;
         let originalAspectRatio = {};
+        let cachedImages = new Map(); // Кэш изображений для устранения мигания
 
         // Создание снежинок
         function createSnowflakes() {
@@ -539,16 +547,17 @@
                 elementStartHeight = selectedElement.height;
                 
                 // Проверяем клик по углу для изменения размера
-                const cornerSize = 20;
+                const cornerSize = 15;
                 if (x > selectedElement.x + selectedElement.width - cornerSize && 
                     y > selectedElement.y + selectedElement.height - cornerSize) {
                     isResizing = true;
                 }
+                
+                e.preventDefault();
             }
         }
 
         function startDragTouch(e) {
-            e.preventDefault();
             const touch = e.touches[0];
             const rect = canvas.getBoundingClientRect();
             const x = touch.clientX - rect.left;
@@ -564,11 +573,13 @@
                 elementStartWidth = selectedElement.width;
                 elementStartHeight = selectedElement.height;
                 
-                const cornerSize = 20;
+                const cornerSize = 15;
                 if (x > selectedElement.x + selectedElement.width - cornerSize && 
                     y > selectedElement.y + selectedElement.height - cornerSize) {
                     isResizing = true;
                 }
+                
+                e.preventDefault();
             }
         }
 
@@ -587,13 +598,8 @@
                 
                 const aspectRatio = originalAspectRatio[selectedElement.src];
                 if (aspectRatio) {
-                    const newWidth = Math.max(50, elementStartWidth + delta);
+                    const newWidth = Math.max(40, elementStartWidth + delta);
                     const newHeight = newWidth / aspectRatio;
-                    selectedElement.width = newWidth;
-                    selectedElement.height = newHeight;
-                } else {
-                    const newWidth = Math.max(50, elementStartWidth + delta);
-                    const newHeight = Math.max(50, elementStartHeight + delta);
                     selectedElement.width = newWidth;
                     selectedElement.height = newHeight;
                 }
@@ -611,7 +617,6 @@
 
         function dragTouch(e) {
             if (!selectedElement || (!isDragging && !isResizing)) return;
-            e.preventDefault();
 
             const touch = e.touches[0];
             const rect = canvas.getBoundingClientRect();
@@ -625,13 +630,8 @@
                 
                 const aspectRatio = originalAspectRatio[selectedElement.src];
                 if (aspectRatio) {
-                    const newWidth = Math.max(50, elementStartWidth + delta);
+                    const newWidth = Math.max(40, elementStartWidth + delta);
                     const newHeight = newWidth / aspectRatio;
-                    selectedElement.width = newWidth;
-                    selectedElement.height = newHeight;
-                } else {
-                    const newWidth = Math.max(50, elementStartWidth + delta);
-                    const newHeight = Math.max(50, elementStartHeight + delta);
                     selectedElement.width = newWidth;
                     selectedElement.height = newHeight;
                 }
@@ -644,6 +644,7 @@
             }
 
             renderCard();
+            e.preventDefault();
         }
 
         function stopDrag() {
@@ -702,6 +703,10 @@
                 
                 state.draggableItems.push(newSticker);
                 originalAspectRatio[sticker] = aspectRatio;
+                
+                // Кэшируем изображение
+                cachedImages.set(sticker, img);
+                
                 renderCard();
             };
             img.src = sticker;
@@ -746,7 +751,7 @@
             // Логотип увеличен в 3 раза с сохранением пропорций
             const logoImg = new Image();
             logoImg.onload = () => {
-                const logoSize = Math.min(canvas.width, canvas.height) * 0.36; // Увеличено в 3 раза
+                const logoSize = Math.min(canvas.width, canvas.height) * 0.36;
                 const logoRatio = logoImg.width / logoImg.height;
                 let logoWidth, logoHeight;
                 
@@ -762,18 +767,25 @@
             };
             logoImg.src = config.logo;
 
-            // Стикеры с сохранением пропорций
+            // Стикеры с сохранением пропорций (используем кэш)
             state.draggableItems.forEach(item => {
                 if (item.type === 'sticker') {
-                    const img = new Image();
-                    img.onload = () => {
-                        ctx.drawImage(img, item.x, item.y, item.width, item.height);
+                    const cachedImg = cachedImages.get(item.src);
+                    if (cachedImg) {
+                        ctx.drawImage(cachedImg, item.x, item.y, item.width, item.height);
                         
                         // Рисуем уголок для изменения размера
                         ctx.fillStyle = '#014d77';
                         ctx.fillRect(item.x + item.width - 8, item.y + item.height - 8, 8, 8);
-                    };
-                    img.src = item.src;
+                    } else {
+                        const img = new Image();
+                        img.onload = () => {
+                            ctx.drawImage(img, item.x, item.y, item.width, item.height);
+                            ctx.fillStyle = '#014d77';
+                            ctx.fillRect(item.x + item.width - 8, item.y + item.height - 8, 8, 8);
+                        };
+                        img.src = item.src;
+                    }
                 }
             });
 
@@ -805,9 +817,9 @@
                 ctx.textAlign = state.textAlign;
                 ctx.textBaseline = 'middle';
                 
-                // Автоматический перенос текста
+                // Улучшенный автоперенос текста
                 const maxWidth = canvas.width * 0.8;
-                const lines = wrapText(ctx, state.greetingText, maxWidth, baseFontSize, fontFamily);
+                const lines = wrapTextImproved(ctx, state.greetingText, maxWidth, baseFontSize, fontFamily);
                 const lineHeight = baseFontSize * 1.3;
                 
                 let startY;
@@ -839,41 +851,65 @@
             }
         }
 
-        function wrapText(context, text, maxWidth, baseFontSize, fontFamily) {
-            const words = text.split('\n').flatMap(line => line.split(' '));
+        function wrapTextImproved(context, text, maxWidth, baseFontSize, fontFamily) {
+            const paragraphs = text.split('\n');
             const lines = [];
-            let currentLine = '';
             let currentFontSize = baseFontSize;
 
-            for (let i = 0; i < words.length; i++) {
-                const testLine = currentLine ? currentLine + ' ' + words[i] : words[i];
-                context.font = `bold ${currentFontSize}px ${fontFamily}`;
-                const metrics = context.measureText(testLine);
-                
-                if (metrics.width > maxWidth && currentLine !== '') {
-                    lines.push({ text: currentLine, fontSize: currentFontSize });
-                    currentLine = words[i];
+            for (const paragraph of paragraphs) {
+                const words = paragraph.split(' ');
+                let currentLine = '';
+
+                for (let i = 0; i < words.length; i++) {
+                    const testLine = currentLine ? currentLine + ' ' + words[i] : words[i];
+                    context.font = `bold ${currentFontSize}px ${fontFamily}`;
+                    const metrics = context.measureText(testLine);
                     
-                    // Уменьшаем шрифт если текст не помещается
-                    if (lines.length > 3 && currentFontSize > baseFontSize * 0.6) {
-                        currentFontSize *= 0.9;
+                    if (metrics.width > maxWidth) {
+                        if (currentLine === '') {
+                            // Слово слишком длинное - разбиваем посимвольно
+                            let word = words[i];
+                            let testWord = '';
+                            for (let j = 0; j < word.length; j++) {
+                                testWord += word[j];
+                                context.font = `bold ${currentFontSize}px ${fontFamily}`;
+                                if (context.measureText(testWord).width > maxWidth) {
+                                    if (testWord.length > 1) {
+                                        lines.push({ text: testWord.slice(0, -1), fontSize: currentFontSize });
+                                        word = word.slice(j - 1);
+                                        testWord = word[0] || '';
+                                        j = 0;
+                                    }
+                                }
+                            }
+                            if (testWord) {
+                                currentLine = testWord;
+                            }
+                        } else {
+                            lines.push({ text: currentLine, fontSize: currentFontSize });
+                            currentLine = words[i];
+                        }
+                    } else {
+                        currentLine = testLine;
                     }
-                } else {
-                    currentLine = testLine;
                 }
-            }
-            
-            if (currentLine) {
-                lines.push({ text: currentLine, fontSize: currentFontSize });
+                
+                if (currentLine) {
+                    lines.push({ text: currentLine, fontSize: currentFontSize });
+                }
+                
+                // Добавляем пустую строку между параграфами
+                if (paragraphs.length > 1 && paragraph !== paragraphs[paragraphs.length - 1]) {
+                    lines.push({ text: '', fontSize: currentFontSize });
+                }
             }
             
             return lines;
         }
 
         function downloadCard() {
-            // Рекомендуемое разрешение для качественных PNG: 300 DPI
-            // Для открытки 10x15 см при 300 DPI = 1181x1772 пикселей
-            const scale = 4; // 4x увеличение для 4K качества
+            // Оптимальное разрешение для HD качества
+            const scale = 2; // 2x увеличение для баланса качества и размера
             
             const { width, height } = config.orientations[state.orientation];
             const highResCanvas = document.createElement('canvas');
@@ -889,8 +925,8 @@
             // Рендерим на высоком разрешении
             renderHighResCard(highResCtx).then(() => {
                 const link = document.createElement('a');
-                link.download = 'новогодняя-открытка-4k.png';
-                link.href = highResCanvas.toDataURL('image/png', 1.0);
+                link.download = 'новогодняя-открытка.png';
+                link.href = highResCanvas.toDataURL('image/png', 0.95); // Немного сжимаем для уменьшения размера
                 link.click();
             });
         }
@@ -996,7 +1032,7 @@
                     ctx.textBaseline = 'middle';
                     
                     const maxWidth = canvas.width * 0.8;
-                    const lines = wrapText(ctx, state.greetingText, maxWidth, baseFontSize, fontFamily);
+                    const lines = wrapTextImproved(ctx, state.greetingText, maxWidth, baseFontSize, fontFamily);
                     const lineHeight = baseFontSize * 1.3;
                     
                     let startY;
