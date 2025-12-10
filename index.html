@@ -851,7 +851,7 @@
             elementStartHeight = selectedElement.height;
 
             // УВЕЛИЧЕННАЯ ОБЛАСТЬ ЗАХВАТА ДЛЯ МОБИЛЬНЫХ УСТРОЙСТВ
-            const cornerSize = 50; 
+            const cornerSize = 60; // Увеличен размер области захвата для пальца
             // Только стикеры можно изменять в размере
             if (selectedElement.type === 'sticker' &&
                 x > selectedElement.x + selectedElement.width - cornerSize &&
@@ -1013,7 +1013,7 @@
 
             // Контрольная точка изменения размера (только для стикеров)
             if (item.type === 'sticker') {
-                const handleSize = 20; 
+                const handleSize = 30; // Увеличенный размер для более удобного нажатия на мобильных
                 ctx.fillStyle = '#014d77';
                 ctx.fillRect(boxX + boxWidth - handleSize / 2, boxY + boxHeight - handleSize / 2, handleSize, handleSize);
             }
