@@ -55,7 +55,7 @@
 
         .container {
             max-width: 1200px;
-            width: 100%; /* КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Установка ширины 100% */
+            width: 100%; 
             background: rgba(255, 255, 255, 0.95);
             border-radius: 20px;
             padding: 30px;
@@ -215,9 +215,9 @@
             justify-content: center;
             align-items: center;
             position: relative;
-            min-height: 400px; 
+            min-height: 600px; /* Увеличен размер для ПК и планшетов */
             width: 100%; 
-            margin: 0 auto; /* КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Центрируем контейнер */
+            margin: 0 auto; 
         }
 
         #cardCanvas {
@@ -264,7 +264,7 @@
             .controls { order: 2; max-height: none; }
             .preview-section { 
                 order: 1; 
-                min-height: 350px; 
+                min-height: 350px; /* Уменьшаем min-height на мобильных, чтобы не занимать весь экран */
                 padding: 10px; 
             }
             h1 { font-size: 2.2em; }
@@ -272,7 +272,7 @@
 
         @media (max-width: 480px) {
             .container { 
-                padding: 10px; /* КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Меньше padding для узких экранов */
+                padding: 10px; 
             }
             .controls { padding: 15px; }
             .orientation-buttons { flex-direction: column; }
@@ -337,7 +337,7 @@
                     <div class="stickers-grid" id="stickersGrid">
                         </div>
                     <p style="color: #014d77; font-size: 16px; margin-top: 8px; font-family: 'Caveat', cursive; font-weight: 500;">
-                        Нажмите на стикер, чтобы добавить. Перемещайте и изменяйте размер на открытке. Выберите элемент, чтобы **удалить (клавиша Delete/Backspace)**.
+                        Нажмите на стикер, чтобы добавить. Перемещайте, изменяйте размер и **удаляйте (красная кнопка "X")** на открытке. Вы также можете использовать клавиши **Delete/Backspace**.
                     </p>
                 </div>
             </div>
@@ -360,9 +360,10 @@
     <script>
         // Конфигурация - файлы в корне сервера
         const config = {
+            // УДВОЕННОЕ HD-РАЗРЕШЕНИЕ для лучшего качества предпросмотра
             orientations: {
-                vertical: { width: 400, height: 600 },
-                horizontal: { width: 600, height: 400 }
+                vertical: { width: 800, height: 1200 }, 
+                horizontal: { width: 1200, height: 800 } 
             },
             backgrounds: [
                 'bg1.png', 'bg2.png', 'bg3.png', 'bg4.png',
@@ -454,10 +455,13 @@
         }
 
         function loadInitialElements() {
-             // 1. Создаем Логотип (должен быть первым элементом для правильной z-индексации)
+             // 1. Создаем Логотип
             const logoImg = cachedImages.get(config.logo);
+            const { width: nativeWidth, height: nativeHeight } = config.orientations.vertical;
+
             if (logoImg) {
-                const logoSize = Math.min(config.orientations.vertical.width, config.orientations.vertical.height) * 0.36;
+                // Логотип занимает 36% от меньшей стороны холста
+                const logoSize = Math.min(nativeWidth, nativeHeight) * 0.36; 
                 const ratio = logoImg.width / logoImg.height;
                 const width = logoSize;
                 const height = logoSize / ratio;
@@ -465,12 +469,11 @@
                 logoItem = {
                     type: 'logo',
                     src: config.logo,
-                    x: config.orientations.vertical.width - width - 20,
-                    y: 20,
+                    x: nativeWidth - width - 40, // Отступ 40 (увеличил с 20 для HD)
+                    y: 40,
                     width: width,
                     height: height,
                     fixedAspect: true,
-                    // Дополнительный флаг, чтобы явно указать, что его нельзя перетаскивать
                     isFixed: true 
                 };
                 state.draggableItems.push(logoItem);
@@ -479,9 +482,9 @@
             // 2. Создаем Текстовый элемент
             const textItem = {
                 type: 'text',
-                x: config.orientations.vertical.width / 2, 
-                y: config.orientations.vertical.height * 0.4,
-                width: config.orientations.vertical.width * 0.8, 
+                x: nativeWidth / 2, 
+                y: nativeHeight * 0.4,
+                width: nativeWidth * 0.8, 
                 height: 0, 
                 content: state.greetingText,
                 font: state.textFont,
@@ -508,38 +511,32 @@
             }
         }
 
-        // Логика масштабирования холста для предотвращения искажений и учета мобильных экранов
+        // Логика масштабирования холста (УЛУЧШЕНО для большего размера предпросмотра)
         function setupCanvas() {
             const { width: nativeWidth, height: nativeHeight } = config.orientations[state.orientation];
             
-            // Устанавливаем нативные размеры (рабочее пространство)
+            // Устанавливаем нативные размеры (рабочее пространство, теперь HD)
             canvas.width = nativeWidth;
             canvas.height = nativeHeight;
 
-            // Вычисляем размеры для отображения (чтобы они помещались в контейнер без искажений)
             const padding = parseInt(window.getComputedStyle(previewSection).paddingLeft) * 2;
             const maxContainerWidth = previewSection.clientWidth - padding; 
-            const maxContainerHeight = 500; 
+            
+            // Расчет максимально возможного размера, ограниченного шириной контейнера
+            let displayWidth = maxContainerWidth;
+            let displayHeight = displayWidth * (nativeHeight / nativeWidth);
 
-            let displayWidth = nativeWidth;
-            let displayHeight = nativeHeight;
-
-            // 1. Масштабируем по ширине, чтобы поместиться в контейнер
-            if (displayWidth > maxContainerWidth) {
-                displayWidth = maxContainerWidth;
-                displayHeight = displayWidth * (nativeHeight / nativeWidth);
-            }
-
-            // 2. Затем проверяем ограничение по высоте
-            if (displayHeight > maxContainerHeight) {
-                displayHeight = maxContainerHeight;
+            // Ограничение по высоте, чтобы на мобильных и небольших экранах холст не выходил за пределы видимости
+            const MAX_ALLOWED_HEIGHT = window.innerHeight * 0.9; 
+            
+            if (displayHeight > MAX_ALLOWED_HEIGHT) {
+                displayHeight = MAX_ALLOWED_HEIGHT;
                 displayWidth = displayHeight * (nativeWidth / nativeHeight);
             }
-            
-            // 3. Дополнительная проверка для узких мобильных экранов
+
+            // Дополнительная проверка для узких мобильных экранов
             if (window.innerWidth <= 968) {
-                // Берем ширину контейнера creator-section, чтобы избежать смещения
-                const mobileMaxWidth = document.querySelector('.creator-section').clientWidth; 
+                const mobileMaxWidth = document.querySelector('.creator-section').clientWidth - 10; 
                 
                 if (displayWidth > mobileMaxWidth) {
                      displayWidth = mobileMaxWidth;
@@ -548,27 +545,30 @@
             }
 
 
-            // Применяем вычисленные размеры к CSS для отображения 
+            // Применяем вычисленные размеры к CSS для отображения (это делает холст большим и четким)
             canvas.style.width = `${displayWidth}px`;
             canvas.style.height = `${displayHeight}px`;
 
             // Обновляем координаты элементов при смене ориентации 
             state.draggableItems.forEach(item => {
                 if (item.type === 'text') {
+                     // Центрируем текст по новым координатам
                      item.x = nativeWidth / 2;
-                     item.y = nativeHeight * 0.4;
+                     // Сдвигаем немного вниз, чтобы не заезжал на логотип
+                     item.y = nativeHeight * 0.45;
                      item.width = nativeWidth * 0.8;
                 } else if (item.type === 'logo') {
-                    // Логотип всегда должен пересчитывать свои фиксированные координаты при смене ориентации
+                    // Пересчет логотипа
                     const ratio = cachedImages.get(item.src).width / cachedImages.get(item.src).height;
                     const logoSize = Math.min(nativeWidth, nativeHeight) * 0.36;
                     item.width = logoSize;
                     item.height = logoSize / ratio;
-                    item.x = nativeWidth - item.width - 20;
-                    item.y = 20;
+                    item.x = nativeWidth - item.width - 40; // Отступ 40
+                    item.y = 40; // Отступ 40
                 } else if (item.type === 'sticker') {
-                    item.x = Math.min(item.x, nativeWidth - item.width);
-                    item.y = Math.min(item.y, nativeHeight - item.height);
+                    // Проверяем, чтобы стикеры не выходили за границы
+                    item.x = Math.max(0, Math.min(item.x, nativeWidth - item.width));
+                    item.y = Math.max(0, Math.min(item.y, nativeHeight - item.height));
                 }
             });
 
@@ -684,8 +684,10 @@
         function addSticker(sticker) {
             const img = cachedImages.get(sticker);
             if (!img) return;
+            
+            const { width: nativeWidth, height: nativeHeight } = config.orientations[state.orientation];
 
-            const size = Math.min(canvas.width, canvas.height) * 0.15;
+            const size = Math.min(nativeWidth, nativeHeight) * 0.15;
             const aspectRatio = img.width / img.height;
             let width, height;
 
@@ -700,12 +702,12 @@
             const newSticker = {
                 type: 'sticker',
                 src: sticker,
-                x: canvas.width / 2 - width / 2 + Math.random() * 20 - 10, 
-                y: canvas.height / 2 - height / 2 + Math.random() * 20 - 10,
+                x: nativeWidth / 2 - width / 2 + Math.random() * 40 - 20, // Больший разброс для HD
+                y: nativeHeight / 2 - height / 2 + Math.random() * 40 - 20,
                 width: width,
                 height: height,
                 fixedAspect: true,
-                isFixed: false // Стикеры можно перетаскивать
+                isFixed: false 
             };
 
             // Добавляем стикер в конец, чтобы он был поверх других
@@ -739,7 +741,7 @@
             for (let i = state.draggableItems.length - 1; i >= 0; i--) {
                 const item = state.draggableItems[i];
 
-                // ИГНОРИРУЕМ ЛОГОТИП В ЛОГИКЕ ВЫБОРА ДЛЯ ПЕРЕТАСКИВАНИЯ
+                // ИГНОРИРУЕМ ЛОГОТИП 
                 if (item.type === 'logo') continue;
 
                 if (item.type === 'text') {
@@ -765,7 +767,24 @@
         function startDrag(e) {
             const { x, y } = getCanvasMousePosition(e);
             
-            const index = getElementAt(x, y);
+            let index = getElementAt(x, y);
+
+            // 1. ПРОВЕРКА НАЖАТИЯ НА КНОПКУ УДАЛЕНИЯ (ПК)
+            if (selectedElementIndex !== -1 && state.draggableItems[selectedElementIndex].type === 'sticker') {
+                const selectedElement = state.draggableItems[selectedElementIndex];
+                const btn = selectedElement.deleteButton;
+                
+                if (btn && x >= btn.x && x <= btn.x + btn.size && y >= btn.y && y <= btn.y + btn.size) {
+                    // Нажатие на кнопку удаления
+                    state.draggableItems.splice(selectedElementIndex, 1);
+                    selectedElementIndex = -1;
+                    renderCard();
+                    e.preventDefault();
+                    return;
+                }
+            }
+            
+            // Если не нажата кнопка удаления, продолжаем обычный процесс
             if (index === -1) {
                 selectedElementIndex = -1; 
                 renderCard();
@@ -781,7 +800,7 @@
                 return;
             }
 
-            // Перемещаем выбранный элемент наверх для правильной z-индексации
+            // Перемещаем выбранный элемент наверх 
             if (index !== state.draggableItems.length - 1) {
                 state.draggableItems.splice(index, 1);
                 state.draggableItems.push(selectedElement);
@@ -818,7 +837,23 @@
         function startDragTouch(e) {
              const { x, y } = getCanvasTouchPosition(e);
             
-            const index = getElementAt(x, y);
+            let index = getElementAt(x, y);
+            
+            // 1. ПРОВЕРКА НАЖАТИЯ НА КНОПКУ УДАЛЕНИЯ (МОБИЛЬНЫЕ)
+            if (selectedElementIndex !== -1 && state.draggableItems[selectedElementIndex].type === 'sticker') {
+                const selectedElement = state.draggableItems[selectedElementIndex];
+                const btn = selectedElement.deleteButton;
+                
+                if (btn && x >= btn.x && x <= btn.x + btn.size && y >= btn.y && y <= btn.y + btn.size) {
+                    // Нажатие на кнопку удаления
+                    state.draggableItems.splice(selectedElementIndex, 1);
+                    selectedElementIndex = -1;
+                    renderCard();
+                    e.preventDefault();
+                    return;
+                }
+            }
+
             if (index === -1) {
                 selectedElementIndex = -1; 
                 renderCard();
@@ -851,7 +886,7 @@
             elementStartHeight = selectedElement.height;
 
             // УВЕЛИЧЕННАЯ ОБЛАСТЬ ЗАХВАТА ДЛЯ МОБИЛЬНЫХ УСТРОЙСТВ
-            const cornerSize = 60; // Увеличен размер области захвата для пальца
+            const cornerSize = 60; 
             // Только стикеры можно изменять в размере
             if (selectedElement.type === 'sticker' &&
                 x > selectedElement.x + selectedElement.width - cornerSize &&
@@ -901,8 +936,8 @@
                 let newY = elementStartY + deltaY;
 
                 if (selectedElement.type === 'sticker') { // Только стикеры
-                    newX = Math.max(0, Math.min(canvas.width - selectedElement.width, newX));
-                    newY = Math.max(0, Math.min(canvas.height - selectedElement.height, newY));
+                    newX = Math.max(-selectedElement.width / 4, Math.min(canvas.width - selectedElement.width * 3 / 4, newX));
+                    newY = Math.max(-selectedElement.height / 4, Math.min(canvas.height - selectedElement.height * 3 / 4, newY));
                     selectedElement.x = newX;
                     selectedElement.y = newY;
                 } else if (selectedElement.type === 'text') {
@@ -989,8 +1024,8 @@
             if (item.type === 'logo') return;
 
             ctx.strokeStyle = '#014d77';
-            ctx.lineWidth = 2;
-            ctx.setLineDash([5, 5]); 
+            ctx.lineWidth = 4; // Увеличена толщина рамки для HD
+            ctx.setLineDash([10, 10]); // Увеличен пунктир
             
             let boxX, boxY, boxWidth, boxHeight;
 
@@ -1011,20 +1046,47 @@
             ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
             ctx.setLineDash([]); 
 
-            // Контрольная точка изменения размера (только для стикеров)
+            // Контрольные точки (только для стикеров)
             if (item.type === 'sticker') {
-                const handleSize = 30; // Увеличенный размер для более удобного нажатия на мобильных
+                const handleSize = 40; // Увеличенный размер для удобства
+                
+                // 1. Ручка изменения размера (правый нижний угол)
                 ctx.fillStyle = '#014d77';
                 ctx.fillRect(boxX + boxWidth - handleSize / 2, boxY + boxHeight - handleSize / 2, handleSize, handleSize);
+
+
+                // 2. КНОПКА УДАЛЕНИЯ (правый верхний угол)
+                const deleteSize = 40; 
+                item.deleteButton = {
+                    x: boxX + boxWidth - deleteSize / 2,
+                    y: boxY - deleteSize / 2,
+                    size: deleteSize
+                };
+                
+                ctx.beginPath();
+                ctx.arc(item.deleteButton.x + deleteSize / 2, item.deleteButton.y + deleteSize / 2, deleteSize / 2, 0, 2 * Math.PI);
+                ctx.fillStyle = 'red';
+                ctx.fill();
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 4;
+                ctx.stroke();
+
+                // Рисуем 'X'
+                ctx.fillStyle = 'white';
+                ctx.font = `bold ${deleteSize * 0.6}px sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('X', item.deleteButton.x + deleteSize / 2, item.deleteButton.y + deleteSize / 2 + 2);
             }
-            // Для текста контрольная точка не нужна, так как размер регулируется по кнопкам
         }
 
         function getFontSize(size) {
+            // Пересчитываем размер шрифта относительно нового HD-разрешения
+            const baseSize = Math.min(canvas.width, canvas.height); 
             switch(size) {
-                case 'small': return Math.min(canvas.width, canvas.height) * 0.04;
-                case 'large': return Math.min(canvas.width, canvas.height) * 0.07;
-                default: return Math.min(canvas.width, canvas.height) * 0.05;
+                case 'small': return baseSize * 0.04;
+                case 'large': return baseSize * 0.07;
+                default: return baseSize * 0.05;
             }
         }
 
@@ -1053,13 +1115,14 @@
             item.height = lines.length * lineHeight;
             
             let xPos = item.x; 
-            if (item.align === 'left') xPos = item.x - item.width / 2 + (canvas.width * 0.02); 
-            if (item.align === 'right') xPos = item.x + item.width / 2 - (canvas.width * 0.02);
+            if (item.align === 'left') xPos = item.x - item.width / 2 + (canvas.width * 0.01); // Уменьшил отступ
+            if (item.align === 'right') xPos = item.x + item.width / 2 - (canvas.width * 0.01);
 
             let startY = item.y - (item.height / 2) + (lineHeight / 2);
 
             lines.forEach((line, index) => {
                 if (line.text.trim()) {
+                    // Используем жирный шрифт для лучшей читаемости на HD
                     ctx.font = `bold ${fontSize}px ${fontFamily}`;
                     ctx.fillText(line.text, xPos, startY + index * lineHeight);
                 }
@@ -1098,7 +1161,8 @@
         // --- ДЕЙСТВИЯ ---
 
         function downloadCard() {
-            const scaleFactor = 2;
+            // Для скачивания используем еще большее масштабирование для супер HD (x3 от HD)
+            const scaleFactor = 3; 
             const hdCanvas = document.createElement('canvas');
             hdCanvas.width = canvas.width * scaleFactor;
             hdCanvas.height = canvas.height * scaleFactor;
@@ -1173,10 +1237,12 @@
             }
             
             function getFontSizeHD(size) {
+                 // Шкала должна быть такой же, как в обычной renderText
+                 const baseSize = Math.min(hdWidth, hdHeight); 
                  switch(size) {
-                    case 'small': return Math.min(hdWidth, hdHeight) * 0.04;
-                    case 'large': return Math.min(hdWidth, hdHeight) * 0.07;
-                    default: return Math.min(hdWidth, hdHeight) * 0.05;
+                    case 'small': return baseSize * 0.04;
+                    case 'large': return baseSize * 0.07;
+                    default: return baseSize * 0.05;
                 }
             }
             
@@ -1190,8 +1256,8 @@
             const lines = wrapText(hdCtx, item.content, maxWidth, fontSize, fontFamily);
             
             let xPos = item.x; 
-            if (item.align === 'left') xPos = item.x - item.width / 2 + (hdWidth * 0.02); 
-            if (item.align === 'right') xPos = item.x + item.width / 2 - (hdWidth * 0.02);
+            if (item.align === 'left') xPos = item.x - item.width / 2 + (hdWidth * 0.01); 
+            if (item.align === 'right') xPos = item.x + item.width / 2 - (hdWidth * 0.01);
 
             let startY = item.y - (item.height / 2) + (lineHeight / 2);
 
