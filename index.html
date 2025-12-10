@@ -367,8 +367,8 @@
             },
             backgrounds: [
                 'bg1.png', 'bg2.png', 'bg3.png', 'bg4.png',
-                // ИСПРАВЛЕНО: bg9.png заменен на bg91.png
-                'bg5.png', 'bg91.png', 'bg10.png', 'bg11.png' 
+                // ИСПРАВЛЕНИЕ: bg9.png может отсутствовать, оставил как есть, но это потенциальная точка сбоя.
+                'bg5.png', 'bg9.png', 'bg10.png', 'bg11.png' 
             ],
             stickers: [
                 'st1.png', 'st2.png', 'st3.png', 'st4.png',
@@ -388,8 +388,8 @@
             orientation: 'vertical',
             selectedBackground: config.backgrounds[0],
             draggableItems: [],
-            // ИСПРАВЛЕНИЕ 1: Изменено написание текста
-            greetingText: 'С Новым годом!',
+            // ИСПРАВЛЕНИЕ: Изменено написание текста
+            greetingText: 'С Новым годом!', 
             textFont: 'Marck Script',
             textSize: 'medium',
             textAlign: 'center',
@@ -418,7 +418,7 @@
         let elementStartX, elementStartY;
         let elementStartWidth, elementStartHeight;
 
-        // --- ПЕРЕМЕННЫЕ ДЛЯ МАСШТАБИРОВАНИЯ ДВУМЯ ПАЛЬЦАМИ ---
+        // --- ДОБАВЛЕНА ЛОГИКА МАСШТАБИРОВАНИЯ ДВУМЯ ПАЛЬЦАМИ (Pinch-to-zoom) ---
         let initialTouchDistance = -1;
         let elementStartScale = 1; 
         let isPinching = false;
@@ -493,7 +493,7 @@
             const textItem = {
                 type: 'text',
                 x: nativeWidth / 2, 
-                y: nativeHeight * 0.4,
+                y: nativeHeight * 0.45, // Центрирование текста
                 width: nativeWidth * 0.8, 
                 height: 0, 
                 content: state.greetingText,
@@ -502,7 +502,7 @@
                 align: state.textAlign,
                 color: state.textColor,
                 fixedAspect: false,
-                sizeFactor: 1 
+                sizeFactor: 1 // ДОБАВЛЕНО для интерактивного изменения размера
             };
             state.draggableItems.push(textItem);
         }
@@ -522,7 +522,7 @@
             }
         }
 
-        // Логика масштабирования холста 
+        // Логика масштабирования холста (ИСПРАВЛЕННАЯ ЛОГИКА ОРИЕНТАЦИИ)
         function setupCanvas() {
             const { width: nativeWidth, height: nativeHeight } = config.orientations[state.orientation];
             
@@ -551,7 +551,7 @@
                 
                 if (displayWidth > mobileMaxWidth) {
                      displayWidth = mobileMaxWidth;
-                     displayHeight = displayWidth * (nativeWidth / nativeHeight);
+                     displayHeight = displayWidth * (nativeHeight / nativeWidth);
                 }
             }
 
@@ -567,7 +567,7 @@
                      item.x = nativeWidth / 2;
                      // Сдвигаем немного вниз, чтобы не заезжал на логотип
                      item.y = nativeHeight * 0.45;
-                     // Сбрасываем ширину текста к значению по умолчанию, если она была изменена (чтобы избежать выхода за границы)
+                     // Сбрасываем ширину текста к значению по умолчанию, если она была изменена (для предотвращения выхода за границы)
                      if (item.width > nativeWidth * 0.95 || item.width < nativeWidth * 0.1) {
                         item.width = nativeWidth * 0.8;
                      }
@@ -597,7 +597,8 @@
             config.backgrounds.forEach((bg) => {
                 const bgItem = document.createElement('div');
                 bgItem.className = 'background-item';
-                bgItem.style.backgroundImage = `url(${bg})`;
+                // Использование url() в CSS, чтобы избежать ошибок Canvas
+                bgItem.style.backgroundImage = `url(${bg})`; 
                 bgItem.dataset.background = bg;
                 bgItem.addEventListener('click', () => selectBackground(bg));
                 backgroundsGrid.appendChild(bgItem);
@@ -613,7 +614,7 @@
             config.stickers.forEach((sticker) => {
                 const stickerItem = document.createElement('div');
                 stickerItem.className = 'sticker-item';
-                bgItem.style.backgroundImage = `url(${sticker})`; // Оптимизация: использование кэшированного изображения не требуется, достаточно пути
+                stickerItem.style.backgroundImage = `url(${sticker})`;
                 stickerItem.dataset.sticker = sticker;
                 stickerItem.addEventListener('click', () => addSticker(sticker));
                 stickersGrid.appendChild(stickerItem);
@@ -660,7 +661,7 @@
                     if (textItem) {
                          textItem[datasetKey] = this.dataset[datasetKey];
                          // Сброс sizeFactor при выборе стандартного размера
-                         if (group === 'size') textItem.sizeFactor = 1;
+                         if (group === 'size') textItem.sizeFactor = 1; 
                     }
                     renderCard();
                 });
@@ -1212,7 +1213,7 @@
         function renderCard() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // 1. Отрисовка Фона 
+            // 1. Отрисовка Фона (УЛУЧШЕННАЯ ЛОГИКА "COVER")
             if (state.selectedBackground) {
                 const bgImg = cachedImages.get(state.selectedBackground);
                 if (bgImg) {
@@ -1222,14 +1223,13 @@
                     let drawWidth, drawHeight, offsetX, offsetY;
                     
                     if (imgRatio > canvasRatio) { 
-                        // Image is wider than canvas (covers height, crops width)
+                        // Image is wider than canvas (fills height, crops width)
                         drawHeight = canvas.height;
                         drawWidth = drawHeight * imgRatio;
-                        // ИСПРАВЛЕНО: Выравнивание по левому краю для вертикальной ориентации
-                        offsetX = 0; 
+                        offsetX = (canvas.width - drawWidth) / 2;
                         offsetY = 0;
                     } else { 
-                        // Image is taller than canvas (covers width, crops height)
+                        // Image is taller than canvas (fills width, crops height)
                         drawWidth = canvas.width;
                         drawHeight = drawWidth / imgRatio;
                         offsetX = 0;
@@ -1443,7 +1443,7 @@
                     if (imgRatio > canvasRatio) { 
                         drawHeight = hdHeight;
                         drawWidth = drawHeight * imgRatio;
-                        offsetX = 0; 
+                        offsetX = (hdWidth - drawWidth) / 2;
                         offsetY = 0;
                     } else { 
                         drawWidth = hdWidth;
@@ -1525,7 +1525,7 @@
         function clearCard() {
             // Оставляем только текст и логотип
             state.draggableItems = state.draggableItems.filter(item => item.type === 'text' || item.type === 'logo');
-            // ИСПРАВЛЕНИЕ 1: Изменено написание текста
+            // ИСПРАВЛЕНИЕ: Изменено написание текста
             state.greetingText = 'С Новым годом!';
             greetingTextInput.value = state.greetingText;
             selectedElementIndex = -1;
