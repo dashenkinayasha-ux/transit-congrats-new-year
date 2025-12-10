@@ -311,7 +311,7 @@
 
                 <div class="control-group">
                     <h3>Текст поздравления</h3>
-                    <textarea class="text-input" id="greetingText" placeholder="Введите ваше новогоднее поздравление...">С Новым Годом!</textarea>
+                    <textarea class="text-input" id="greetingText" placeholder="Введите ваше новогоднее поздравление...">С Новым годом!</textarea>
                     
                     <h4>Шрифт текста</h4>
                     <div class="font-buttons">
@@ -394,7 +394,8 @@
             orientation: 'vertical',
             selectedBackground: config.backgrounds[0],
             draggableItems: [],
-            greetingText: 'С Новым Годом!',
+            // ИСПРАВЛЕНИЕ: "С Новым годом!"
+            greetingText: 'С Новым годом!', 
             textFont: 'Marck Script',
             textSize: 'medium',
             textAlign: 'center',
@@ -422,6 +423,7 @@
         let dragStartX, dragStartY;
         let elementStartX, elementStartY;
         let elementStartWidth, elementStartHeight;
+        let elementStartRotation = 0; // Инициализируем
 
         // --- ДОБАВЛЕНИЕ ДЛЯ РЕДАКТИРОВАНИЯ НА ХОЛСТЕ ---
         let isEditingText = false; 
@@ -683,12 +685,13 @@
             document.addEventListener('mouseup', stopDrag);
             
             // --- ВОССТАНОВЛЕНИЕ: Мульти-сенсорные события ---
+            // Passive: false для возможности предотвращения дефолтного поведения (прокрутка, zoom)
             canvas.addEventListener('touchstart', startDragTouch, { passive: false });
             document.addEventListener('touchmove', dragTouch, { passive: false });
             document.addEventListener('touchend', stopDragTouch);
             // --------------------------------------------------
 
-            // >>> ДОБАВЛЕНИЕ: Двойной клик для редактирования текста на холсте
+            // >>> ДОБАВЛЕНИЕ: Двойной клик для редактирования текста на холсте (Работает и на мобильных)
             canvas.addEventListener('dblclick', handleCanvasDblClick);
             // <<< КОНЕЦ ДОБАВЛЕНИЯ
 
@@ -760,12 +763,19 @@
             // Масштабируем координаты клика/касания в нативные координаты холста
             const scaleX = canvas.width / rect.width;
             const scaleY = canvas.height / rect.height;
+            
+            // Если событие - это TouchEvent, берем первое касание
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
             return {
-                x: (e.clientX - rect.left) * scaleX,
-                y: (e.clientY - rect.top) * scaleY
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY
             };
         }
         
+        // Переименована в getCanvasMousePosition для универсальности
+        /*
         function getCanvasTouchPosition(e) {
             const touch = e.touches[0];
             const rect = canvas.getBoundingClientRect();
@@ -776,6 +786,7 @@
                 y: (touch.clientY - rect.top) * scaleY
             };
         }
+        */
 
         function getElementAt(x, y) {
             // Ищем с конца, чтобы выбрать верхний элемент
@@ -828,8 +839,8 @@
 
 
                     // Обратное преобразование координат (относительно центра)
-                    const cos = Math.cos(-item.rotation);
-                    const sin = Math.sin(-item.rotation);
+                    const cos = Math.cos(-(item.rotation || 0)); // Используем (item.rotation || 0)
+                    const sin = Math.sin(-(item.rotation || 0));
                     
                     const relX = x - centerX;
                     const relY = y - centerY;
@@ -902,6 +913,7 @@
             elementStartY = selectedElement.y;
             elementStartWidth = selectedElement.width;
             elementStartHeight = selectedElement.height;
+            elementStartRotation = selectedElement.rotation || 0; // Сохраняем начальный поворот
 
             const cornerSize = 30; 
             
@@ -991,14 +1003,17 @@
             // Если больше двух пальцев, игнорируем
             if (e.touches.length > 2) return;
 
-            const { x, y } = getCanvasTouchPosition(e);
+            // Получаем координаты для первого касания
+            const { x, y } = getCanvasMousePosition(e);
             let index = getElementAt(x, y);
 
-            // Если два касания, то ищем элемент по первому касанию, если не найдено, ищем по второму
+            // Если два касания, ищем элемент, который затронут хотя бы одним из касаний
             if (e.touches.length === 2) {
-                const { x: x2, y: y2 } = getCanvasTouchPosition({ touches: [e.touches[1]] });
-                // Если не нашли по первому касанию, пробуем по второму
-                if (index === -1) index = getElementAt(x2, y2); 
+                // Преобразуем оба касания в координаты холста
+                const touches = Array.from(e.touches).map(t => getCanvasMousePosition({ touches: [t] }));
+                
+                // Если по первому касанию не нашли, ищем по второму
+                if (index === -1) index = getElementAt(touches[1].x, touches[1].y); 
             }
 
             // 1. ПРОВЕРКА НАЖАТИЯ НА КНОПКУ УДАЛЕНИЯ (МОБИЛЬНЫЕ)
@@ -1055,7 +1070,7 @@
 
             if (e.touches.length === 2) {
                 // Инициализация мульти-сенсорных жестов (Pinch/Rotate)
-                const touches = Array.from(e.touches).map(t => getCanvasMousePosition(t));
+                const touches = Array.from(e.touches).map(t => getCanvasMousePosition({ touches: [t] }));
                 initialPinchDistance = getDistance(touches);
                 initialAngle = getAngle(touches);
                 isDragging = false;
@@ -1072,53 +1087,40 @@
 
         function dragTouch(e) {
             if (touchElementIndex === -1 || !e.touches || isEditingText) return;
-            e.preventDefault();
+            
+            // Предотвращаем прокрутку и системный zoom
+            e.preventDefault(); 
 
             const selectedElement = state.draggableItems[touchElementIndex];
             if (selectedElement.type === 'logo') return;
 
             if (e.touches.length === 2) {
                 // ОБРАБОТКА PINCH/ROTATE
-                const touches = Array.from(e.touches).map(t => getCanvasMousePosition(t));
+                const touches = Array.from(e.touches).map(t => getCanvasMousePosition({ touches: [t] }));
                 
                 // --- Масштабирование (Pinch-to-zoom) ---
                 const currentPinchDistance = getDistance(touches);
-                if (initialPinchDistance) {
+                if (initialPinchDistance && initialPinchDistance !== 0) {
                     const scaleChange = currentPinchDistance / initialPinchDistance;
                     
                     // Расчет нового размера
                     let newWidth = elementStartWidth * scaleChange;
-                    let newHeight = elementStartHeight * scaleChange;
-
+                    
                     // Ограничение размера
                     const minSize = Math.min(canvas.width, canvas.height) * 0.05;
                     const maxSize = Math.min(canvas.width, canvas.height) * 0.8;
                     
-                    if (newWidth < minSize) {
-                        newWidth = minSize;
-                        if (selectedElement.fixedAspect) {
-                           const ratio = elementStartWidth / elementStartHeight;
-                           newHeight = newWidth / ratio;
-                        }
-                    } else if (newWidth > maxSize) {
-                        newWidth = maxSize;
-                        if (selectedElement.fixedAspect) {
-                           const ratio = elementStartWidth / elementStartHeight;
-                           newHeight = newWidth / ratio;
-                        }
-                    }
+                    newWidth = Math.max(minSize, Math.min(maxSize, newWidth));
                     
-                    if (selectedElement.fixedAspect) {
+                    if (selectedElement.type === 'sticker' && selectedElement.fixedAspect) {
+                         // СТИКЕРЫ: Масштабируем с сохранением пропорций
                          const ratio = elementStartWidth / elementStartHeight;
                          selectedElement.width = newWidth;
                          selectedElement.height = newWidth / ratio;
+                         
                     } else if (selectedElement.type === 'text') {
-                         // Для текста меняем ширину ограничивающего блока
+                         // ТЕКСТ: Меняем ширину ограничивающего блока (это меняет размер шрифта и перенос строк)
                          selectedElement.width = newWidth;
-                    } else {
-                         // Для стикеров без фиксированного аспекта меняем и ширину, и высоту
-                         selectedElement.width = newWidth;
-                         selectedElement.height = newHeight;
                     }
                     
                     
@@ -1127,8 +1129,9 @@
                     const centerTouchX = (touches[0].x + touches[1].x) / 2;
                     const centerTouchY = (touches[0].y + touches[1].y) / 2;
                     
-                    // Смещение центра элемента к центру касаний (простой вариант)
+                    // Смещение центра элемента к центру касаний 
                     if (selectedElement.type === 'sticker') {
+                        // Обновляем позицию на основе нового размера и центра
                         selectedElement.x = centerTouchX - selectedElement.width / 2;
                         selectedElement.y = centerTouchY - selectedElement.height / 2;
                     } else if (selectedElement.type === 'text') {
@@ -1139,7 +1142,7 @@
                 
                 // --- Поворот (Rotate) ---
                 const currentAngle = getAngle(touches);
-                if (initialAngle) {
+                if (initialAngle !== null) {
                     const angleChange = currentAngle - initialAngle;
                     selectedElement.rotation = elementStartRotation + angleChange; 
                     // Нормализация угла (необязательно, но полезно)
@@ -1149,7 +1152,7 @@
                 
             } else if (e.touches.length === 1 && isDragging) {
                 // ОБРАБОТКА ОДИНОЧНОГО ПЕРЕТАСКИВАНИЯ (после сброса pinch)
-                const { x, y } = getCanvasTouchPosition(e);
+                const { x, y } = getCanvasMousePosition(e);
                 const deltaX = x - dragStartX;
                 const deltaY = y - dragStartY;
 
@@ -1161,10 +1164,14 @@
             }
             
             // Если произошло изменение размера/поворота, мы считаем это началом нового жеста
+            // Обновляем начальные значения для непрерывного жеста
             if (e.touches.length === 2) {
-                const touches = Array.from(e.touches).map(t => getCanvasMousePosition(t));
+                const touches = Array.from(e.touches).map(t => getCanvasMousePosition({ touches: [t] }));
                 initialPinchDistance = getDistance(touches);
                 initialAngle = getAngle(touches);
+                elementStartWidth = selectedElement.width;
+                elementStartHeight = selectedElement.height;
+                elementStartRotation = selectedElement.rotation || 0;
             }
 
             renderCard();
@@ -1238,6 +1245,7 @@
         function handleCanvasDblClick(e) {
             if (isEditingText) return; 
 
+            // Используем координаты клика/касания
             const { x, y } = getCanvasMousePosition(e);
             const textItemIndex = getElementAt(x, y); 
 
@@ -1260,7 +1268,6 @@
             const fontSize = getFontSize(textItem.size);
             const lineHeight = fontSize * 1.3;
             
-            // Используем временный контекст для измерения текста (так как wrapText требует контекст)
             const tempCtx = canvas.getContext('2d');
             let fontFamilyTemp;
             switch(textItem.font) {
@@ -1274,6 +1281,7 @@
             const lines = wrapText(tempCtx, textItem.content, boxWidth, fontSize, fontFamilyTemp);
             const boxHeight = lines.length * lineHeight; 
 
+            // x, y - это центр текста. Расчет координат левого верхнего угла:
             const boxX = textItem.x - boxWidth / 2;
             const boxY = textItem.y - boxHeight / 2;
 
@@ -1300,7 +1308,10 @@
             editor.style.borderRadius = '5px';
             editor.style.resize = 'none';
             editor.style.overflow = 'hidden';
-            editor.style.background = 'rgba(255, 255, 255, 0.9)';
+            
+            // ИСПРАВЛЕНИЕ: Делаем фон прозрачным
+            editor.style.background = 'transparent'; 
+            
             editor.style.zIndex = '100';
             
             // Применяем стили шрифта
@@ -1311,7 +1322,7 @@
             editor.style.fontWeight = 'bold';
             editor.style.lineHeight = '1.3';
             // Добавляем поворот
-            editor.style.transform = `rotate(${textItem.rotation}rad)`;
+            editor.style.transform = `rotate(${textItem.rotation || 0}rad)`;
 
             // 4. Обновляем ссылку и состояние
             document.body.appendChild(editor);
@@ -1324,16 +1335,21 @@
 
             // 5. Синхронизация и выход из режима редактирования
             editor.addEventListener('input', (e) => {
-                textItem.content = e.target.value;
-                state.greetingText = e.target.value;
-                greetingTextInput.value = e.target.value; // Обновляем основной textarea
+                const newValue = e.target.value;
+                textItem.content = newValue;
+                state.greetingText = newValue;
+                greetingTextInput.value = newValue; // Обновляем основной textarea
                 
                 // Пересчитываем высоту редактора при вводе для динамического изменения размера
                 const currentFontSize = parseFloat(editor.style.fontSize);
-                const newLines = wrapText(tempCtx, e.target.value, boxWidth, currentFontSize / scaleY, fontFamilyTemp);
-                const newBoxHeight = newLines.length * (currentFontSize / scaleY) * 1.3;
+                const canvasFontSize = currentFontSize / scaleY; // Фонтсайз в нативных координатах
                 
-                // Пересчитываем позицию и размер
+                // ВАЖНО: При пересчете высоты нужно использовать нативный размер шрифта
+                tempCtx.font = `bold ${canvasFontSize}px ${fontFamilyTemp}`;
+                const newLines = wrapText(tempCtx, newValue, boxWidth, canvasFontSize, fontFamilyTemp);
+                const newBoxHeight = newLines.length * canvasFontSize * 1.3;
+                
+                // Пересчитываем позицию и размер CSS
                 const newCssHeight = newBoxHeight * scaleY;
                 const newCssTop = rect.top + (textItem.y - newBoxHeight / 2) * scaleY + window.scrollY;
 
@@ -1386,17 +1402,20 @@
                     let drawWidth, drawHeight, offsetX, offsetY;
                     
                     if (imgRatio > canvasRatio) { 
+                        // Фон шире холста: растягиваем по высоте
                         drawHeight = canvas.height;
                         drawWidth = drawHeight * imgRatio;
                         offsetX = (canvas.width - drawWidth) / 2;
                         offsetY = 0;
                     } else { 
+                        // Фон выше холста: растягиваем по ширине
                         drawWidth = canvas.width;
                         drawHeight = drawWidth / imgRatio;
                         offsetX = 0;
                         offsetY = (canvas.height - drawHeight) / 2;
                     }
                     
+                    // ИСПРАВЛЕНИЕ: Корректное отображение фона (эффект cover)
                     ctx.drawImage(bgImg, offsetX, offsetY, drawWidth, drawHeight);
                 } else {
                     ctx.fillStyle = '#f0f8ff'; 
@@ -1456,7 +1475,7 @@
             // Сохраняем и восстанавливаем контекст, чтобы поворот не влиял на рамку
             ctx.save();
             ctx.translate(centerX, centerY);
-            ctx.rotate(item.rotation);
+            ctx.rotate(item.rotation || 0);
             ctx.translate(-centerX, -centerY);
 
 
@@ -1694,7 +1713,7 @@
             
             const lines = wrapText(hdCtx, item.content, maxWidth, fontSize, fontFamily);
             
-            let startY = item.y - (item.height / 2); //item.height уже посчитана в renderCard
+            let startY = item.y - (item.height / 2); 
             
             let xPos;
             if (item.align === 'center') {
@@ -1721,7 +1740,7 @@
         function clearCard() {
             // Оставляем только текст и логотип
             state.draggableItems = state.draggableItems.filter(item => item.type === 'text' || item.type === 'logo');
-            state.greetingText = 'С Новым Годом!';
+            state.greetingText = 'С Новым годом!'; // ИСПРАВЛЕНИЕ: "С Новым годом!"
             greetingTextInput.value = state.greetingText;
             selectedElementIndex = -1;
             
