@@ -287,7 +287,7 @@
         <h1>🎄 Новогодний Конструктор Открыток 🎅</h1>
         
         <div class="creator-section">
-            <div class="controls">
+            <div class="controls" id="controlsPanel"> 
                 <div class="control-group">
                     <h3>Формат открытки</h3>
                     <div class="orientation-buttons">
@@ -367,7 +367,7 @@
             },
             backgrounds: [
                 'bg1.png', 'bg2.png', 'bg3.png', 'bg4.png',
-                'bg5.png', 'bg9.png', 'bg10.png', 'bg11.png'
+                'bg5.png', 'bg91.png', 'bg10.png', 'bg11.png'
             ],
             stickers: [
                 'st1.png', 'st2.png', 'st3.png', 'st4.png',
@@ -407,6 +407,7 @@
         const alignBtns = document.querySelectorAll('.align-btn');
         const sizeBtns = document.querySelectorAll('.size-btn');
         const previewSection = document.querySelector('.preview-section'); // Получаем контейнер
+        const controlsPanel = document.getElementById('controlsPanel'); // Получаем панель управления
 
         // Перетаскиваемые элементы
         let selectedElementIndex = -1; 
@@ -495,7 +496,7 @@
                 align: state.textAlign,
                 color: state.textColor,
                 fixedAspect: false,
-                scaleFactor: 1.0 // НОВЫЙ: Фактор масштабирования текста
+                scaleFactor: 1.0 
             };
             state.draggableItems.push(textItem);
         }
@@ -781,7 +782,8 @@
                 // item.height рассчитывается в renderText, используем дефолтное значение, если 0
                 boxHeight = item.height || getFontSize(item) * 3; 
 
-                boxX = item.align === 'center' ? item.x - boxWidth / 2 : item.x;
+                // ИСПРАВЛЕНИЕ 2: Рамка всегда центрирована относительно item.x
+                boxX = item.x - boxWidth / 2; 
                 boxY = item.y - boxHeight / 2;
             } else if (item.type === 'sticker' || item.type === 'logo') {
                 boxX = item.x;
@@ -980,7 +982,7 @@
                          selectedElement.height = newWidth / aspectRatio;
                     }
                 } else if (selectedElement.type === 'text') {
-                     // ИСПРАВЛЕНИЕ 1: Изменяем масштаб шрифта
+                     // Изменяем масштаб шрифта
                      const scaleDelta = (dragStartY - y) * 0.005; // Используем вертикальное движение для масштабирования
                      let newScale = elementStartScale + scaleDelta;
                      newScale = Math.max(0.2, Math.min(3.0, newScale)); // Ограничиваем масштаб
@@ -1019,10 +1021,18 @@
             if (selectedElementIndex !== -1) {
                 const selectedElement = state.draggableItems[selectedElementIndex];
                  
-                // ИСПРАВЛЕНИЕ 2: Если не было значительного движения, считаем это "кликом" для фокусировки
+                // ИСПРАВЛЕНИЕ 1: Фокусируем ввод без скролла всей страницы
                 if (!hasMoved && selectedElement.type === 'text') {
-                     greetingTextInput.focus();
-                     // Автоматическое выделение текста удобно для быстрой замены
+                     // 1. Пытаемся использовать preventScroll для современных браузеров
+                     try {
+                        greetingTextInput.focus({ preventScroll: true });
+                     } catch(e) {
+                        // 2. Если не поддерживается, используем старый focus() и скроллим только родительскую панель
+                        greetingTextInput.focus();
+                        // Прокручиваем родительскую панель controls, чтобы показать input
+                        greetingTextInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                     }
+                     
                      greetingTextInput.select(); 
                 }
             }
@@ -1171,8 +1181,11 @@
             item.height = lines.length * lineHeight; // Обновляем высоту элемента
             
             let xPos = item.x; 
-            if (item.align === 'left') xPos = item.x - item.width / 2 + (canvas.width * 0.01); 
-            if (item.align === 'right') xPos = item.x + item.width / 2 - (canvas.width * 0.01);
+            // Это смещение предназначено для визуального отступа, чтобы текст не прилипал к краю рамки
+            const offset = canvas.width * 0.01; 
+            
+            if (item.align === 'left') xPos = item.x - item.width / 2 + offset; 
+            if (item.align === 'right') xPos = item.x + item.width / 2 - offset;
 
             let startY = item.y - (item.height / 2) + (lineHeight / 2);
 
@@ -1311,8 +1324,10 @@
             const lines = wrapText(hdCtx, item.content, maxWidth, fontSize, fontFamily);
             
             let xPos = item.x; 
-            if (item.align === 'left') xPos = item.x - item.width / 2 + (hdWidth * 0.01); 
-            if (item.align === 'right') xPos = item.x + item.width / 2 - (hdWidth * 0.01);
+            const offset = hdWidth * 0.01;
+            
+            if (item.align === 'left') xPos = item.x - item.width / 2 + offset; 
+            if (item.align === 'right') xPos = item.x + item.width / 2 - offset;
 
             let startY = item.y - (item.height / 2) + (lineHeight / 2);
 
