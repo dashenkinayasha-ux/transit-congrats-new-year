@@ -454,7 +454,7 @@
         }
 
         function loadInitialElements() {
-             // 1. Создаем Логотип
+             // 1. Создаем Логотип (должен быть первым элементом для правильной z-индексации)
             const logoImg = cachedImages.get(config.logo);
             if (logoImg) {
                 const logoSize = Math.min(config.orientations.vertical.width, config.orientations.vertical.height) * 0.36;
@@ -469,7 +469,9 @@
                     y: 20,
                     width: width,
                     height: height,
-                    fixedAspect: true 
+                    fixedAspect: true,
+                    // Дополнительный флаг, чтобы явно указать, что его нельзя перетаскивать
+                    isFixed: true 
                 };
                 state.draggableItems.push(logoItem);
             }
@@ -557,6 +559,7 @@
                      item.y = nativeHeight * 0.4;
                      item.width = nativeWidth * 0.8;
                 } else if (item.type === 'logo') {
+                    // Логотип всегда должен пересчитывать свои фиксированные координаты при смене ориентации
                     const ratio = cachedImages.get(item.src).width / cachedImages.get(item.src).height;
                     const logoSize = Math.min(nativeWidth, nativeHeight) * 0.36;
                     item.width = logoSize;
@@ -657,7 +660,8 @@
             // Удаление элемента (Delete/Backspace)
             document.addEventListener('keydown', (e) => {
                 if (selectedElementIndex !== -1 && (e.key === 'Delete' || e.key === 'Backspace')) {
-                    if (state.draggableItems[selectedElementIndex].type === 'sticker') {
+                    // Удалять можно только стикеры
+                    if (state.draggableItems[selectedElementIndex].type === 'sticker') { 
                         state.draggableItems.splice(selectedElementIndex, 1);
                         selectedElementIndex = -1;
                         renderCard();
@@ -700,10 +704,13 @@
                 y: canvas.height / 2 - height / 2 + Math.random() * 20 - 10,
                 width: width,
                 height: height,
-                fixedAspect: true
+                fixedAspect: true,
+                isFixed: false // Стикеры можно перетаскивать
             };
 
+            // Добавляем стикер в конец, чтобы он был поверх других
             state.draggableItems.push(newSticker);
+            // Выбираем новый стикер
             selectedElementIndex = state.draggableItems.length - 1; 
             renderCard();
         }
@@ -728,9 +735,15 @@
         }
 
         function getElementAt(x, y) {
+            // Ищем с конца, чтобы выбрать верхний элемент
             for (let i = state.draggableItems.length - 1; i >= 0; i--) {
                 const item = state.draggableItems[i];
+
+                // ИГНОРИРУЕМ ЛОГОТИП В ЛОГИКЕ ВЫБОРА ДЛЯ ПЕРЕТАСКИВАНИЯ
+                if (item.type === 'logo') continue;
+
                 if (item.type === 'text') {
+                    // Для текста проверяем область вокруг центра
                     const textBoundaryX = item.align === 'center' ? item.x - item.width / 2 : item.x;
                     const textBoundaryWidth = item.width;
                     const textBoundaryHeight = item.height; 
@@ -739,7 +752,7 @@
                         y >= item.y - item.height / 2 && y <= item.y + item.height / 2) {
                         return i;
                     }
-                } else if (item.type === 'sticker' || item.type === 'logo') {
+                } else if (item.type === 'sticker') { // Проверяем только стикеры
                     if (x >= item.x && x <= item.x + item.width &&
                         y >= item.y && y <= item.y + item.height) {
                         return i;
@@ -758,9 +771,17 @@
                 renderCard();
                 return;
             }
-
+            
             const selectedElement = state.draggableItems[index];
+            
+            // Запрещаем перетаскивание, если это ЛОГОТИП
+            if (selectedElement.type === 'logo') { 
+                selectedElementIndex = -1; 
+                renderCard();
+                return;
+            }
 
+            // Перемещаем выбранный элемент наверх для правильной z-индексации
             if (index !== state.draggableItems.length - 1) {
                 state.draggableItems.splice(index, 1);
                 state.draggableItems.push(selectedElement);
@@ -777,7 +798,8 @@
             elementStartHeight = selectedElement.height;
 
             const cornerSize = 30; 
-            if ((selectedElement.type === 'sticker' || selectedElement.type === 'logo') &&
+            // Только стикеры можно изменять в размере
+            if (selectedElement.type === 'sticker' &&
                 x > selectedElement.x + selectedElement.width - cornerSize &&
                 y > selectedElement.y + selectedElement.height - cornerSize) {
                 isResizing = true;
@@ -804,6 +826,14 @@
             }
 
             const selectedElement = state.draggableItems[index];
+            
+            // Запрещаем перетаскивание, если это ЛОГОТИП
+            if (selectedElement.type === 'logo') { 
+                selectedElementIndex = -1; 
+                renderCard();
+                return;
+            }
+
 
             if (index !== state.draggableItems.length - 1) {
                 state.draggableItems.splice(index, 1);
@@ -822,7 +852,8 @@
 
             // УВЕЛИЧЕННАЯ ОБЛАСТЬ ЗАХВАТА ДЛЯ МОБИЛЬНЫХ УСТРОЙСТВ
             const cornerSize = 50; 
-            if ((selectedElement.type === 'sticker' || selectedElement.type === 'logo') &&
+            // Только стикеры можно изменять в размере
+            if (selectedElement.type === 'sticker' &&
                 x > selectedElement.x + selectedElement.width - cornerSize &&
                 y > selectedElement.y + selectedElement.height - cornerSize) {
                 isResizing = true;
@@ -848,7 +879,10 @@
 
             const selectedElement = state.draggableItems[selectedElementIndex];
 
-            if (isResizing) {
+            // Запрещаем перетаскивание/изменение размера для логотипа (хотя он не должен быть выбран)
+             if (selectedElement.type === 'logo') return;
+
+            if (isResizing && selectedElement.type === 'sticker') { // Только стикеры
                 const newWidth = Math.max(40, elementStartWidth + (x - dragStartX));
                 
                 if (selectedElement.fixedAspect) {
@@ -866,14 +900,15 @@
                 let newX = elementStartX + deltaX;
                 let newY = elementStartY + deltaY;
 
-                if (selectedElement.type === 'sticker' || selectedElement.type === 'logo') {
+                if (selectedElement.type === 'sticker') { // Только стикеры
                     newX = Math.max(0, Math.min(canvas.width - selectedElement.width, newX));
                     newY = Math.max(0, Math.min(canvas.height - selectedElement.height, newY));
                     selectedElement.x = newX;
                     selectedElement.y = newY;
                 } else if (selectedElement.type === 'text') {
-                    selectedElement.x = Math.max(selectedElement.width/2, Math.min(canvas.width - selectedElement.width/2, newX));
-                    selectedElement.y = Math.max(selectedElement.height/2, Math.min(canvas.height - selectedElement.height/2, newY));
+                    // Логика перемещения текста
+                    selectedElement.x = newX;
+                    selectedElement.y = newY;
                 }
             }
 
@@ -950,13 +985,16 @@
         }
 
         function drawSelectionBox(item) {
+            // ЛОГОТИП НИКОГДА НЕ ВЫБИРАЕТСЯ И НИКОГДА НЕ РИСУЕТ РАМКУ
+            if (item.type === 'logo') return;
+
             ctx.strokeStyle = '#014d77';
             ctx.lineWidth = 2;
             ctx.setLineDash([5, 5]); 
             
             let boxX, boxY, boxWidth, boxHeight;
 
-            if (item.type === 'sticker' || item.type === 'logo') {
+            if (item.type === 'sticker') {
                 boxX = item.x;
                 boxY = item.y;
                 boxWidth = item.width;
@@ -973,12 +1011,13 @@
             ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
             ctx.setLineDash([]); 
 
-            // Контрольная точка изменения размера (увеличенная для мобильных)
-            if (item.type === 'sticker' || item.type === 'logo') {
+            // Контрольная точка изменения размера (только для стикеров)
+            if (item.type === 'sticker') {
                 const handleSize = 20; 
                 ctx.fillStyle = '#014d77';
                 ctx.fillRect(boxX + boxWidth - handleSize / 2, boxY + boxHeight - handleSize / 2, handleSize, handleSize);
             }
+            // Для текста контрольная точка не нужна, так как размер регулируется по кнопкам
         }
 
         function getFontSize(size) {
@@ -1166,6 +1205,7 @@
 
 
         function clearCard() {
+            // Оставляем только текст и логотип
             state.draggableItems = state.draggableItems.filter(item => item.type === 'text' || item.type === 'logo');
             state.greetingText = 'С Новым Годом!';
             greetingTextInput.value = state.greetingText;
@@ -1181,4 +1221,3 @@
     </script>
 </body>
 </html>
-
