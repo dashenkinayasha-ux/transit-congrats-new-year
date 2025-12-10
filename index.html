@@ -367,7 +367,7 @@
             },
             backgrounds: [
                 'bg1.png', 'bg2.png', 'bg3.png', 'bg4.png',
-                'bg5.png', 'bg91.png', 'bg10.png', 'bg11.png'
+                'bg5.png', 'bg9.png', 'bg10.png', 'bg11.png'
             ],
             stickers: [
                 'st1.png', 'st2.png', 'st3.png', 'st4.png',
@@ -864,6 +864,7 @@
                 isDragging = false;
                 canvas.style.cursor = 'nwse-resize';
             } else {
+                // Если не попали в ручку, и это не логотип, то это перетаскивание
                 isDragging = true;
                 isResizing = false;
                 canvas.style.cursor = 'move';
@@ -939,6 +940,7 @@
                 isResizing = true;
                 isDragging = false;
             } else {
+                // Если не попали в ручку, и это не логотип, то это перетаскивание
                 isDragging = true;
                 isResizing = false;
             }
@@ -1021,25 +1023,26 @@
             if (selectedElementIndex !== -1) {
                 const selectedElement = state.draggableItems[selectedElementIndex];
                  
-                // ИСПРАВЛЕНИЕ 1: Фокусируем ввод без скролла всей страницы
+                // ИСПРАВЛЕНИЕ 2: Фокусируем ввод текста, но без скролла
                 if (!hasMoved && selectedElement.type === 'text') {
-                     // 1. Пытаемся использовать preventScroll для современных браузеров
-                     try {
-                        greetingTextInput.focus({ preventScroll: true });
-                     } catch(e) {
-                        // 2. Если не поддерживается, используем старый focus() и скроллим только родительскую панель
-                        greetingTextInput.focus();
-                        // Прокручиваем родительскую панель controls, чтобы показать input
-                        greetingTextInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                     }
-                     
+                     // Выбираем текст в поле ввода, чтобы пользователь мог сразу начать печатать
+                     greetingTextInput.focus(); 
                      greetingTextInput.select(); 
+                     // *** УДАЛЕНО: Скролл, чтобы оставить открытку в поле зрения ***
                 }
+            }
+            
+            // ИСПРАВЛЕНИЕ 1: Обычный клик (hasMoved=false) на тексте или стикере 
+            // не должен считаться изменением размера (resizing), 
+            // это предотвращает случайное изменение размера текста на мобильных.
+            if (selectedElementIndex !== -1 && !hasMoved) {
+                 isResizing = false; // Отключаем, если это был просто клик
             }
 
             isDragging = false;
             isResizing = false;
             canvas.style.cursor = 'default';
+            hasMoved = false; // Сброс флага
         }
 
 
@@ -1322,6 +1325,12 @@
             hdCtx.textBaseline = 'middle';
             
             const lines = wrapText(hdCtx, item.content, maxWidth, fontSize, fontFamily);
+            
+            // Item.height должен быть актуальным, но его надо пересчитать в масштабе HD
+            // Так как item.height обновляется только в renderText, вызываем ее (без отрисовки)
+            const tempCtx = document.createElement('canvas').getContext('2d');
+            const tempLines = wrapText(tempCtx, item.content, maxWidth, fontSize, fontFamily);
+            item.height = tempLines.length * lineHeight;
             
             let xPos = item.x; 
             const offset = hdWidth * 0.01;
