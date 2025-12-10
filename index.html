@@ -367,7 +367,7 @@
             },
             backgrounds: [
                 'bg1.png', 'bg2.png', 'bg3.png', 'bg4.png',
-                // ИСПРАВЛЕНИЕ: bg9.png может отсутствовать, оставил как есть, но это потенциальная точка сбоя.
+                // Убедитесь, что эти файлы существуют
                 'bg5.png', 'bg9.png', 'bg10.png', 'bg11.png' 
             ],
             stickers: [
@@ -848,7 +848,45 @@
             } else {
                 selectedElementIndex = index;
             }
-            
+
+            // === НОВАЯ ЛОГИКА: НАЧАЛО РЕДАКТИРОВАНИЯ ТЕКСТА ПО КЛИКУ (ПК) ===
+            const isText = selectedElement.type === 'text';
+
+            if (isText) {
+                const cornerSize = 30; // Размер ручки
+                
+                let checkX, checkY, checkWidth, checkHeight;
+                
+                checkWidth = selectedElement.width;
+                checkHeight = selectedElement.height; 
+                checkY = selectedElement.y - checkHeight / 2;
+                const padding = (canvas.width * 0.01);
+
+                if (selectedElement.align === 'center') {
+                    checkX = selectedElement.x - checkWidth / 2;
+                } else if (selectedElement.align === 'left') {
+                    checkX = selectedElement.x - selectedElement.width / 2 + padding; 
+                } else if (selectedElement.align === 'right') {
+                    checkX = (selectedElement.x + selectedElement.width / 2 - padding) - selectedElement.width; 
+                }
+
+                // Если клик не попал в ручку (правый нижний угол)
+                if (!(x > checkX + checkWidth - cornerSize &&
+                    y > checkY + checkHeight - cornerSize)) {
+                    
+                    // Если клик произошел внутри области текста, начинаем редактирование
+                    if (x >= checkX && x <= checkX + checkWidth &&
+                        y >= checkY && y <= checkY + checkHeight) {
+                        
+                        startTextEdit(selectedElement);
+                        e.preventDefault(); 
+                        return; // Останавливаем дальнейший процесс перетаскивания/изменения размера
+                    }
+                }
+            }
+            // =================================================================
+
+
             dragStartX = x;
             dragStartY = y;
             elementStartX = selectedElement.x;
@@ -860,16 +898,14 @@
             const cornerSize = 30; 
             
             // ПРОВЕРКА НАЖАТИЯ НА РУЧКУ ИЗМЕНЕНИЯ РАЗМЕРА
-            const isText = selectedElement.type === 'text';
-            const isSticker = selectedElement.type === 'sticker';
-
+            
             let checkX, checkY, checkWidth, checkHeight;
-            if (isSticker) {
+            if (selectedElement.type === 'sticker') {
                 checkX = selectedElement.x;
                 checkY = selectedElement.y;
                 checkWidth = selectedElement.width;
                 checkHeight = selectedElement.height;
-            } else if (isText) {
+            } else if (selectedElement.type === 'text') {
                 // Используем границы рамки выбора
                 checkWidth = selectedElement.width;
                 checkHeight = selectedElement.height; 
@@ -892,7 +928,7 @@
             }
 
             // РУЧКА ИЗМЕНЕНИЯ РАЗМЕРА РАБОТАЕТ И ДЛЯ ТЕКСТА, И ДЛЯ СТИКЕРА
-            if ((isSticker || isText) && x > checkX + checkWidth - cornerSize &&
+            if ((selectedElement.type === 'sticker' || selectedElement.type === 'text') && x > checkX + checkWidth - cornerSize &&
                 y > checkY + checkHeight - cornerSize) {
                 isResizing = true;
                 isDragging = false;
@@ -1028,27 +1064,14 @@
                     selectedElementIndex = index;
                 }
 
-                dragStartX = x;
-                dragStartY = y;
-                elementStartX = selectedElement.x;
-                elementStartY = selectedElement.y;
-                elementStartWidth = selectedElement.width;
-                elementStartHeight = selectedElement.height;
-                elementStartScale = selectedElement.type === 'text' ? (selectedElement.sizeFactor || 1) : 1; 
+                // === НОВАЯ ЛОГИКА: НАЧАЛО РЕДАКТИРОВАНИЯ ТЕКСТА ПО КЛИКУ (МОБИЛЬНЫЕ) ===
+                const isText = selectedElement.type === 'text';
 
-                // УВЕЛИЧЕННАЯ ОБЛАСТЬ ЗАХВАТА ДЛЯ МОБИЛЬНЫХ УСТРОЙСТВ
+                // Увеличенная область захвата для мобильных устройств
                 const cornerSize = 60; 
                 
-                const isText = selectedElement.type === 'text';
-                const isSticker = selectedElement.type === 'sticker';
-
                 let checkX, checkY, checkWidth, checkHeight;
-                if (isSticker) {
-                    checkX = selectedElement.x;
-                    checkY = selectedElement.y;
-                    checkWidth = selectedElement.width;
-                    checkHeight = selectedElement.height;
-                } else if (isText) {
+                if (isText) {
                     // Используем границы рамки
                     checkWidth = selectedElement.width;
                     checkHeight = selectedElement.height; 
@@ -1061,6 +1084,37 @@
                     } else if (selectedElement.align === 'right') {
                         checkX = (selectedElement.x + selectedElement.width / 2 - padding) - selectedElement.width; 
                     }
+                    
+                    // Если клик не попал в ручку (правый нижний угол)
+                    if (!(x > checkX + checkWidth - cornerSize && y > checkY + checkHeight - cornerSize)) {
+                        
+                        // Если клик произошел внутри области текста, начинаем редактирование
+                         if (x >= checkX && x <= checkX + checkWidth && y >= checkY && y <= checkY + checkHeight) {
+                            startTextEdit(selectedElement);
+                            e.preventDefault();
+                            return; // Останавливаем дальнейший процесс
+                        }
+                    }
+                }
+                // =================================================================
+
+                dragStartX = x;
+                dragStartY = y;
+                elementStartX = selectedElement.x;
+                elementStartY = selectedElement.y;
+                elementStartWidth = selectedElement.width;
+                elementStartHeight = selectedElement.height;
+                elementStartScale = selectedElement.type === 'text' ? (selectedElement.sizeFactor || 1) : 1; 
+
+                
+                if (selectedElement.type === 'sticker') {
+                    checkX = selectedElement.x;
+                    checkY = selectedElement.y;
+                    checkWidth = selectedElement.width;
+                    checkHeight = selectedElement.height;
+                } else if (selectedElement.type === 'text') {
+                    // Используем границы рамки
+                    // (Расчет checkX, checkY, checkWidth, checkHeight уже был выше)
                 } else {
                      isDragging = true;
                      isResizing = false;
@@ -1070,7 +1124,7 @@
                 }
 
 
-                if ((isSticker || isText) && x > checkX + checkWidth - cornerSize &&
+                if ((selectedElement.type === 'sticker' || selectedElement.type === 'text') && x > checkX + checkWidth - cornerSize &&
                     y > checkY + checkHeight - cornerSize) {
                     isResizing = true;
                     isDragging = false;
@@ -1193,6 +1247,28 @@
             canvas.style.cursor = 'default';
         }
 
+        // --- ЛОГИКА РЕДАКТИРОВАНИЯ ТЕКСТА ПРИ НАЖАТИИ НА ХОЛСТ ---
+        
+        function startTextEdit(textItem) {
+             // 1. Обновляем поле ввода (textarea)
+             greetingTextInput.value = textItem.content;
+             state.greetingText = textItem.content;
+
+             // 2. Устанавливаем фокус на поле ввода
+             greetingTextInput.focus();
+             
+             // 3. Выделяем элемент (начинаем рисовать рамку)
+             selectedElementIndex = state.draggableItems.indexOf(textItem);
+             
+             // 4. Прокручиваем к элементу управления текстом (для мобильных)
+             const textControlGroup = document.getElementById('greetingText').closest('.control-group');
+             if (textControlGroup) {
+                 textControlGroup.scrollIntoView({ behavior: 'smooth', block: 'center' });
+             }
+
+             renderCard();
+        }
+
 
         // --- ОТРИСОВКА ---
 
@@ -1213,7 +1289,7 @@
         function renderCard() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // 1. Отрисовка Фона (УЛУЧШЕННАЯ ЛОГИКА "COVER")
+            // 1. Отрисовка Фона (УЛУЧШЕННАЯ ЛОГИКА "COVER" С ВЫРАВНИВАНИЕМ ПО ЛЕВОМУ КРАЮ)
             if (state.selectedBackground) {
                 const bgImg = cachedImages.get(state.selectedBackground);
                 if (bgImg) {
@@ -1226,7 +1302,8 @@
                         // Image is wider than canvas (fills height, crops width)
                         drawHeight = canvas.height;
                         drawWidth = drawHeight * imgRatio;
-                        offsetX = (canvas.width - drawWidth) / 2;
+                        // ИСПРАВЛЕНИЕ: Выравниваем по левому краю, чтобы левая часть кадра не пропадала
+                        offsetX = 0; 
                         offsetY = 0;
                     } else { 
                         // Image is taller than canvas (fills width, crops height)
@@ -1431,7 +1508,7 @@
         }
 
         function renderCardHD(hdCtx, hdWidth, hdHeight) {
-            // 1. Фон
+            // 1. Фон (Повторяем исправленную логику для HD-холста)
             if (state.selectedBackground) {
                 const bgImg = cachedImages.get(state.selectedBackground);
                 if (bgImg) {
@@ -1443,7 +1520,8 @@
                     if (imgRatio > canvasRatio) { 
                         drawHeight = hdHeight;
                         drawWidth = drawHeight * imgRatio;
-                        offsetX = (hdWidth - drawWidth) / 2;
+                        // ИСПРАВЛЕНИЕ: Выравниваем по левому краю
+                        offsetX = 0; 
                         offsetY = 0;
                     } else { 
                         drawWidth = hdWidth;
@@ -1507,6 +1585,11 @@
             
             const lines = wrapText(hdCtx, item.content, maxWidth, fontSize, fontFamily);
             
+            // Используем item.height, который был обновлен в renderCard
+            // и он пропорционален, поэтому работает.
+            item.height = lines.length * lineHeight / (hdCtx.canvas.height / hdHeight); 
+
+
             let xPos = item.x; 
             if (item.align === 'left') xPos = item.x - item.width / 2 + padding; 
             if (item.align === 'right') xPos = item.x + item.width / 2 - padding;
@@ -1525,7 +1608,7 @@
         function clearCard() {
             // Оставляем только текст и логотип
             state.draggableItems = state.draggableItems.filter(item => item.type === 'text' || item.type === 'logo');
-            // ИСПРАВЛЕНИЕ: Изменено написание текста
+            // ИСПРАВЛЕНИЕ: Текст по умолчанию "С Новым годом!"
             state.greetingText = 'С Новым годом!';
             greetingTextInput.value = state.greetingText;
             selectedElementIndex = -1;
