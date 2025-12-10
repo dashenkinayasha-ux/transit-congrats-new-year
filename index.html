@@ -496,7 +496,7 @@
                 align: state.textAlign,
                 color: state.textColor,
                 fixedAspect: false,
-                scaleFactor: 1.0 
+                scaleFactor: 1.0 // Добавляем фактор масштаба для изменения размера
             };
             state.draggableItems.push(textItem);
         }
@@ -755,12 +755,9 @@
 
                 if (item.type === 'text') {
                     // Для текста проверяем область вокруг центра
-                    const textBoundaryX = item.align === 'center' ? item.x - item.width / 2 : item.x;
-                    const textBoundaryWidth = item.width;
-                    const textBoundaryHeight = item.height; 
-
-                    if (x >= textBoundaryX && x <= textBoundaryX + textBoundaryWidth &&
-                        y >= item.y - item.height / 2 && y <= item.y + item.height / 2) {
+                    const box = getBoundingBox(item);
+                    if (box && x >= box.x && x <= box.x + box.width &&
+                        y >= box.y && y <= box.y + box.height) {
                         return i;
                     }
                 } else if (item.type === 'sticker') { // Проверяем только стикеры
@@ -780,9 +777,11 @@
             if (item.type === 'text') {
                 boxWidth = item.width;
                 // item.height рассчитывается в renderText, используем дефолтное значение, если 0
-                boxHeight = item.height || getFontSize(item) * 3; 
+                // Для расчета зоны клика, используем оценку: 3 строки по базовому размеру шрифта
+                const baseFontSize = getFontSize({ size: item.size, scaleFactor: 1.0 });
+                boxHeight = item.height || baseFontSize * 3 * 1.3; 
 
-                // ИСПРАВЛЕНИЕ 2: Рамка всегда центрирована относительно item.x
+                // Рамка всегда центрирована относительно item.x
                 boxX = item.x - boxWidth / 2; 
                 boxY = item.y - boxHeight / 2;
             } else if (item.type === 'sticker' || item.type === 'logo') {
@@ -801,6 +800,7 @@
             const { x, y } = getCanvasMousePosition(e);
             
             let index = getElementAt(x, y);
+            const box = index !== -1 ? getBoundingBox(state.draggableItems[index]) : null;
 
             // 1. ПРОВЕРКА НАЖАТИЯ НА КНОПКУ УДАЛЕНИЯ (ПК)
             if (selectedElementIndex !== -1 && state.draggableItems[selectedElementIndex].type === 'sticker') {
@@ -852,12 +852,9 @@
 
             hasMoved = false; // Сброс флага движения
 
-            const box = getBoundingBox(selectedElement);
-            if (!box) return;
-
             const cornerSize = 30; 
             // Проверка на ручку изменения размера
-            if ((selectedElement.type === 'sticker' || selectedElement.type === 'text') && 
+            if (box && (selectedElement.type === 'sticker' || selectedElement.type === 'text') && 
                 x > box.x + box.width - cornerSize &&
                 y > box.y + box.height - cornerSize) {
                 isResizing = true;
@@ -878,7 +875,8 @@
              const { x, y } = getCanvasTouchPosition(e);
             
             let index = getElementAt(x, y);
-            
+            const box = index !== -1 ? getBoundingBox(state.draggableItems[index]) : null;
+
             // 1. ПРОВЕРКА НАЖАТИЯ НА КНОПКУ УДАЛЕНИЯ (МОБИЛЬНЫЕ)
             if (selectedElementIndex !== -1 && state.draggableItems[selectedElementIndex].type === 'sticker') {
                 const selectedElement = state.draggableItems[selectedElementIndex];
@@ -928,13 +926,10 @@
 
             hasMoved = false; // Сброс флага движения
 
-            const box = getBoundingBox(selectedElement);
-            if (!box) return;
-
             // УВЕЛИЧЕННАЯ ОБЛАСТЬ ЗАХВАТА ДЛЯ МОБИЛЬНЫХ УСТРОЙСТВ
             const cornerSize = 60; 
             // Проверка на ручку изменения размера
-            if ((selectedElement.type === 'sticker' || selectedElement.type === 'text') && 
+            if (box && (selectedElement.type === 'sticker' || selectedElement.type === 'text') && 
                 x > box.x + box.width - cornerSize &&
                 y > box.y + box.height - cornerSize) {
                 isResizing = true;
@@ -1023,22 +1018,24 @@
             if (selectedElementIndex !== -1) {
                 const selectedElement = state.draggableItems[selectedElementIndex];
                  
-                // ИСПРАВЛЕНИЕ 2: Фокусируем ввод текста, но без скролла
+                // *** ИСПРАВЛЕНИЕ ТРЕБОВАНИЯ 2: Фокусируем ввод текста БЕЗ СКРОЛЛА ***
                 if (!hasMoved && selectedElement.type === 'text') {
                      // Выбираем текст в поле ввода, чтобы пользователь мог сразу начать печатать
-                     greetingTextInput.focus(); 
-                     greetingTextInput.select(); 
-                     // *** УДАЛЕНО: Скролл, чтобы оставить открытку в поле зрения ***
+                     // preventScroll: true ГАРАНТИРУЕТ, что страница не "прыгнет"
+                     if (greetingTextInput.focus) {
+                        greetingTextInput.focus({ preventScroll: true }); 
+                        greetingTextInput.select(); 
+                     }
+                }
+                
+                // ИСПРАВЛЕНИЕ ТРЕБОВАНИЯ 1: Обычный клик (hasMoved=false) на тексте или стикере 
+                // не должен считаться изменением размера (resizing), 
+                // это предотвращает случайное изменение размера текста на мобильных.
+                if (!hasMoved) {
+                    isResizing = false; // Отключаем, если это был просто клик
                 }
             }
             
-            // ИСПРАВЛЕНИЕ 1: Обычный клик (hasMoved=false) на тексте или стикере 
-            // не должен считаться изменением размера (resizing), 
-            // это предотвращает случайное изменение размера текста на мобильных.
-            if (selectedElementIndex !== -1 && !hasMoved) {
-                 isResizing = false; // Отключаем, если это был просто клик
-            }
-
             isDragging = false;
             isResizing = false;
             canvas.style.cursor = 'default';
@@ -1059,7 +1056,7 @@
                 default: fixedSize = baseSize * 0.05;
             }
             // Применяем scaleFactor
-            return fixedSize * item.scaleFactor;
+            return fixedSize * (item.scaleFactor || 1.0);
         }
 
 
@@ -1314,7 +1311,7 @@
                     case 'large': fixedSize = baseSize * 0.07; break;
                     default: fixedSize = baseSize * 0.05;
                  }
-                 return fixedSize * item.scaleFactor; // Применяем scaleFactor
+                 return fixedSize * (item.scaleFactor || 1.0); // Применяем scaleFactor
             }
             
             const fontSize = getFontSizeHD(item);
@@ -1326,8 +1323,7 @@
             
             const lines = wrapText(hdCtx, item.content, maxWidth, fontSize, fontFamily);
             
-            // Item.height должен быть актуальным, но его надо пересчитать в масштабе HD
-            // Так как item.height обновляется только в renderText, вызываем ее (без отрисовки)
+            // Обновляем item.height в масштабе HD
             const tempCtx = document.createElement('canvas').getContext('2d');
             const tempLines = wrapText(tempCtx, item.content, maxWidth, fontSize, fontFamily);
             item.height = tempLines.length * lineHeight;
