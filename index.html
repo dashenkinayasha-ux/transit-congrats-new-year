@@ -264,7 +264,7 @@
             .controls { order: 2; max-height: none; }
             .preview-section { 
                 order: 1; 
-                min-height: 350px; /* Уменьшаем min-height на мобильных, чтобы не занимать весь экран */
+                min-height: 350px; 
                 padding: 10px; 
             }
             h1 { font-size: 2.2em; }
@@ -304,7 +304,7 @@
 
                 <div class="control-group">
                     <h3>Текст поздравления</h3>
-                    <textarea class="text-input" id="greetingText" placeholder="Введите ваше новогоднее поздравление...">С Новым Годом!</textarea>
+                    <textarea class="text-input" id="greetingText" placeholder="Введите ваше новогоднее поздравление...">С Новым годом!</textarea>
                     
                     <h4>Шрифт текста</h4>
                     <div class="font-buttons">
@@ -387,7 +387,8 @@
             orientation: 'vertical',
             selectedBackground: config.backgrounds[0],
             draggableItems: [],
-            greetingText: 'С Новым Годом!',
+            // ИСПРАВЛЕНИЕ 3: Изменен текст по умолчанию
+            greetingText: 'С Новым годом!',
             textFont: 'Marck Script',
             textSize: 'medium',
             textAlign: 'center',
@@ -765,6 +766,29 @@
             return -1;
         }
 
+        // Вспомогательная функция для получения Bounding Box (Top-Left, Width, Height)
+        function getBoundingBox(item) {
+            let boxX, boxY, boxWidth, boxHeight;
+
+            if (item.type === 'text') {
+                boxWidth = item.width;
+                // item.height рассчитывается в renderText, используем дефолтное значение, если 0
+                boxHeight = item.height || getFontSize(item.size) * 3; 
+
+                boxX = item.align === 'center' ? item.x - boxWidth / 2 : item.x;
+                boxY = item.y - boxHeight / 2;
+            } else if (item.type === 'sticker' || item.type === 'logo') {
+                boxX = item.x;
+                boxY = item.y;
+                boxWidth = item.width;
+                boxHeight = item.height;
+            } else {
+                return null;
+            }
+            return { x: boxX, y: boxY, width: boxWidth, height: boxHeight };
+        }
+
+
         function startDrag(e) {
             const { x, y } = getCanvasMousePosition(e);
             
@@ -816,12 +840,15 @@
             elementStartY = selectedElement.y;
             elementStartWidth = selectedElement.width;
             elementStartHeight = selectedElement.height;
+            
+            const box = getBoundingBox(selectedElement);
+            if (!box) return;
 
             const cornerSize = 30; 
-            // ИСПРАВЛЕНИЕ 2: Разрешаем изменение размера для текста
+            // ИСПРАВЛЕНИЕ 2: Используем box-координаты для точного определения ручки изменения размера
             if ((selectedElement.type === 'sticker' || selectedElement.type === 'text') && 
-                x > selectedElement.x + selectedElement.width - cornerSize &&
-                y > selectedElement.y + selectedElement.height - cornerSize) {
+                x > box.x + box.width - cornerSize &&
+                y > box.y + box.height - cornerSize) {
                 isResizing = true;
                 isDragging = false;
                 canvas.style.cursor = 'nwse-resize';
@@ -886,12 +913,15 @@
             elementStartWidth = selectedElement.width;
             elementStartHeight = selectedElement.height;
 
+            const box = getBoundingBox(selectedElement);
+            if (!box) return;
+
             // УВЕЛИЧЕННАЯ ОБЛАСТЬ ЗАХВАТА ДЛЯ МОБИЛЬНЫХ УСТРОЙСТВ
             const cornerSize = 60; 
-            // ИСПРАВЛЕНИЕ 2: Разрешаем изменение размера для текста
+            // ИСПРАВЛЕНИЕ 2: Используем box-координаты для точного определения ручки изменения размера
             if ((selectedElement.type === 'sticker' || selectedElement.type === 'text') && 
-                x > selectedElement.x + selectedElement.width - cornerSize &&
-                y > selectedElement.y + selectedElement.height - cornerSize) {
+                x > box.x + box.width - cornerSize &&
+                y > box.y + box.height - cornerSize) {
                 isResizing = true;
                 isDragging = false;
             } else {
@@ -940,6 +970,7 @@
                 let newY = elementStartY + deltaY;
 
                 if (selectedElement.type === 'sticker') { // Только стикеры
+                    // Ограничения
                     newX = Math.max(-selectedElement.width / 4, Math.min(canvas.width - selectedElement.width * 3 / 4, newX));
                     newY = Math.max(-selectedElement.height / 4, Math.min(canvas.height - selectedElement.height * 3 / 4, newY));
                     selectedElement.x = newX;
@@ -978,8 +1009,24 @@
             if (state.selectedBackground) {
                 const bgImg = cachedImages.get(state.selectedBackground);
                 if (bgImg) {
-                    // ИСПРАВЛЕНИЕ 1: Использование простой заливки (fill) вместо cover для устранения ошибки "левой части фона"
-                    ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+                    const Cw = canvas.width;
+                    const Ch = canvas.height;
+                    const Iw = bgImg.width;
+                    const Ih = bgImg.height;
+                    
+                    // ИСПРАВЛЕНИЕ 1: Логика Cover с левым выравниванием
+                    const scale = Math.max(Cw / Iw, Ch / Ih); // Масштаб для покрытия
+                    
+                    const scaledWidth = Iw * scale;
+                    const scaledHeight = Ih * scale;
+                    
+                    // X Offset: 0 для привязки к левому краю (если scaledWidth > Cw)
+                    const dx = 0; 
+                    
+                    // Y Offset: Центрирование по вертикали
+                    const dy = (Ch - scaledHeight) / 2;
+                    
+                    ctx.drawImage(bgImg, dx, dy, scaledWidth, scaledHeight);
                 } else {
                     ctx.fillStyle = '#f0f8ff'; 
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -1015,23 +1062,10 @@
             ctx.lineWidth = 4; // Увеличена толщина рамки для HD
             ctx.setLineDash([10, 10]); // Увеличен пунктир
             
-            let boxX, boxY, boxWidth, boxHeight;
+            const box = getBoundingBox(item);
+            if (!box) return;
 
-            if (item.type === 'sticker') {
-                boxX = item.x;
-                boxY = item.y;
-                boxWidth = item.width;
-                boxHeight = item.height;
-            } else if (item.type === 'text') {
-                boxWidth = item.width;
-                boxHeight = item.height; 
-                boxX = item.align === 'center' ? item.x - boxWidth / 2 : item.x;
-                boxY = item.y - boxHeight / 2;
-            } else {
-                return;
-            }
-
-            ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+            ctx.strokeRect(box.x, box.y, box.width, box.height);
             ctx.setLineDash([]); 
 
             const handleSize = 40; 
@@ -1039,15 +1073,15 @@
             if (item.type === 'sticker' || item.type === 'text') {
                 // Ручка изменения размера (правый нижний угол)
                 ctx.fillStyle = '#014d77';
-                ctx.fillRect(boxX + boxWidth - handleSize / 2, boxY + boxHeight - handleSize / 2, handleSize, handleSize);
+                ctx.fillRect(box.x + box.width - handleSize / 2, box.y + box.height - handleSize / 2, handleSize, handleSize);
             }
 
             // КНОПКА УДАЛЕНИЯ (только для стикеров)
             if (item.type === 'sticker') {
                 const deleteSize = 40; 
                 item.deleteButton = {
-                    x: boxX + boxWidth - deleteSize / 2,
-                    y: boxY - deleteSize / 2,
+                    x: box.x + box.width - deleteSize / 2,
+                    y: box.y - deleteSize / 2,
                     size: deleteSize
                 };
                 
@@ -1100,7 +1134,7 @@
             
             const lines = wrapText(ctx, item.content, maxWidth, fontSize, fontFamily);
 
-            item.height = lines.length * lineHeight;
+            item.height = lines.length * lineHeight; // Обновляем высоту элемента
             
             let xPos = item.x; 
             if (item.align === 'left') xPos = item.x - item.width / 2 + (canvas.width * 0.01); // Уменьшил отступ
@@ -1174,8 +1208,21 @@
             if (state.selectedBackground) {
                 const bgImg = cachedImages.get(state.selectedBackground);
                 if (bgImg) {
-                    // ИСПРАВЛЕНИЕ 1: Использование простой заливки (fill) вместо cover
-                    hdCtx.drawImage(bgImg, 0, 0, hdWidth, hdHeight);
+                    const Cw = hdWidth;
+                    const Ch = hdHeight;
+                    const Iw = bgImg.width;
+                    const Ih = bgImg.height;
+
+                    // ИСПРАВЛЕНИЕ 1: Логика Cover с левым выравниванием для HD
+                    const scale = Math.max(Cw / Iw, Ch / Ih);
+                    
+                    const scaledWidth = Iw * scale;
+                    const scaledHeight = Ih * scale;
+                    
+                    const dx = 0; 
+                    const dy = (Ch - scaledHeight) / 2;
+                    
+                    hdCtx.drawImage(bgImg, dx, dy, scaledWidth, scaledHeight);
                 } else {
                     hdCtx.fillStyle = '#f0f8ff';
                     hdCtx.fillRect(0, 0, hdWidth, hdHeight);
@@ -1245,6 +1292,7 @@
         function clearCard() {
             // Оставляем только текст и логотип
             state.draggableItems = state.draggableItems.filter(item => item.type === 'text' || item.type === 'logo');
+            // ИСПРАВЛЕНИЕ 3: Изменен текст по умолчанию
             state.greetingText = 'С Новым годом!';
             greetingTextInput.value = state.greetingText;
             selectedElementIndex = -1;
@@ -1252,6 +1300,11 @@
             const textItem = state.draggableItems.find(item => item.type === 'text');
             if (textItem) {
                  textItem.content = state.greetingText;
+                 // Возвращаем текст в центр
+                 const { width: nativeWidth, height: nativeHeight } = config.orientations[state.orientation];
+                 textItem.x = nativeWidth / 2;
+                 textItem.y = nativeHeight * 0.45;
+                 textItem.width = nativeWidth * 0.8;
             }
 
             renderCard();
