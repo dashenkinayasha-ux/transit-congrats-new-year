@@ -387,7 +387,6 @@
             orientation: 'vertical',
             selectedBackground: config.backgrounds[0],
             draggableItems: [],
-            // ИСПРАВЛЕНИЕ 3: Изменен текст по умолчанию
             greetingText: 'С Новым годом!',
             textFont: 'Marck Script',
             textSize: 'medium',
@@ -416,6 +415,8 @@
         let dragStartX, dragStartY;
         let elementStartX, elementStartY;
         let elementStartWidth, elementStartHeight;
+        let elementStartScale; // Добавлено для масштабирования текста
+        let hasMoved = false; // Добавлено для определения "клика"
 
         // --- ИНИЦИАЛИЗАЦИЯ И ЗАГРУЗКА ---
 
@@ -493,7 +494,8 @@
                 size: state.textSize,
                 align: state.textAlign,
                 color: state.textColor,
-                fixedAspect: false
+                fixedAspect: false,
+                scaleFactor: 1.0 // НОВЫЙ: Фактор масштабирования текста
             };
             state.draggableItems.push(textItem);
         }
@@ -644,6 +646,10 @@
                     const textItem = state.draggableItems.find(item => item.type === 'text');
                     if (textItem) {
                          textItem[datasetKey] = this.dataset[datasetKey];
+                         // Сброс масштаба при изменении размера через кнопки
+                         if (datasetKey === 'size') {
+                            textItem.scaleFactor = 1.0; 
+                         }
                     }
                     renderCard();
                 });
@@ -773,7 +779,7 @@
             if (item.type === 'text') {
                 boxWidth = item.width;
                 // item.height рассчитывается в renderText, используем дефолтное значение, если 0
-                boxHeight = item.height || getFontSize(item.size) * 3; 
+                boxHeight = item.height || getFontSize(item) * 3; 
 
                 boxX = item.align === 'center' ? item.x - boxWidth / 2 : item.x;
                 boxY = item.y - boxHeight / 2;
@@ -840,12 +846,15 @@
             elementStartY = selectedElement.y;
             elementStartWidth = selectedElement.width;
             elementStartHeight = selectedElement.height;
-            
+            elementStartScale = selectedElement.scaleFactor || 1.0; // Сохраняем начальный масштаб
+
+            hasMoved = false; // Сброс флага движения
+
             const box = getBoundingBox(selectedElement);
             if (!box) return;
 
             const cornerSize = 30; 
-            // ИСПРАВЛЕНИЕ 2: Используем box-координаты для точного определения ручки изменения размера
+            // Проверка на ручку изменения размера
             if ((selectedElement.type === 'sticker' || selectedElement.type === 'text') && 
                 x > box.x + box.width - cornerSize &&
                 y > box.y + box.height - cornerSize) {
@@ -912,13 +921,16 @@
             elementStartY = selectedElement.y;
             elementStartWidth = selectedElement.width;
             elementStartHeight = selectedElement.height;
+            elementStartScale = selectedElement.scaleFactor || 1.0; // Сохраняем начальный масштаб
+
+            hasMoved = false; // Сброс флага движения
 
             const box = getBoundingBox(selectedElement);
             if (!box) return;
 
             // УВЕЛИЧЕННАЯ ОБЛАСТЬ ЗАХВАТА ДЛЯ МОБИЛЬНЫХ УСТРОЙСТВ
             const cornerSize = 60; 
-            // ИСПРАВЛЕНИЕ 2: Используем box-координаты для точного определения ручки изменения размера
+            // Проверка на ручку изменения размера
             if ((selectedElement.type === 'sticker' || selectedElement.type === 'text') && 
                 x > box.x + box.width - cornerSize &&
                 y > box.y + box.height - cornerSize) {
@@ -948,29 +960,39 @@
             // Запрещаем перетаскивание/изменение размера для логотипа (хотя он не должен быть выбран)
              if (selectedElement.type === 'logo') return;
 
-            // ИСПРАВЛЕНИЕ 2: Разрешаем изменение размера для текста и стикеров
+            const deltaX = x - dragStartX;
+            const deltaY = y - dragStartY;
+
+            // Если движение достаточное, считаем, что это перетаскивание/изменение размера
+            if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+                hasMoved = true;
+            }
+
+
             if (isResizing && (selectedElement.type === 'sticker' || selectedElement.type === 'text')) { 
-                const newWidth = Math.max(40, elementStartWidth + (x - dragStartX));
-                
-                if (selectedElement.type === 'sticker' && selectedElement.fixedAspect) {
-                     // Стикеры сохраняют пропорции
-                     const img = cachedImages.get(selectedElement.src);
-                     const aspectRatio = img.width / img.height;
-                     selectedElement.width = newWidth;
-                     selectedElement.height = newWidth / aspectRatio;
+                if (selectedElement.type === 'sticker') {
+                     // Стикеры меняют ширину и сохраняют пропорции
+                    const newWidth = Math.max(40, elementStartWidth + deltaX);
+                    if (selectedElement.fixedAspect) {
+                         const img = cachedImages.get(selectedElement.src);
+                         const aspectRatio = img.width / img.height;
+                         selectedElement.width = newWidth;
+                         selectedElement.height = newWidth / aspectRatio;
+                    }
                 } else if (selectedElement.type === 'text') {
-                     // Для текста меняем только ширину (высота пересчитывается в renderText)
-                    selectedElement.width = Math.min(canvas.width * 0.9, newWidth);
+                     // ИСПРАВЛЕНИЕ 1: Изменяем масштаб шрифта
+                     const scaleDelta = (dragStartY - y) * 0.005; // Используем вертикальное движение для масштабирования
+                     let newScale = elementStartScale + scaleDelta;
+                     newScale = Math.max(0.2, Math.min(3.0, newScale)); // Ограничиваем масштаб
+                     selectedElement.scaleFactor = newScale;
+                     
+                     // Ширина (для переноса текста) остается прежней
                 }
             } else if (isDragging) {
-                const deltaX = x - dragStartX;
-                const deltaY = y - dragStartY;
-
                 let newX = elementStartX + deltaX;
                 let newY = elementStartY + deltaY;
 
                 if (selectedElement.type === 'sticker') { // Только стикеры
-                    // Ограничения
                     newX = Math.max(-selectedElement.width / 4, Math.min(canvas.width - selectedElement.width * 3 / 4, newX));
                     newY = Math.max(-selectedElement.height / 4, Math.min(canvas.height - selectedElement.height * 3 / 4, newY));
                     selectedElement.x = newX;
@@ -993,7 +1015,18 @@
             e.preventDefault();
         }
 
-        function stopDrag() {
+        function stopDrag(e) {
+            if (selectedElementIndex !== -1) {
+                const selectedElement = state.draggableItems[selectedElementIndex];
+                 
+                // ИСПРАВЛЕНИЕ 2: Если не было значительного движения, считаем это "кликом" для фокусировки
+                if (!hasMoved && selectedElement.type === 'text') {
+                     greetingTextInput.focus();
+                     // Автоматическое выделение текста удобно для быстрой замены
+                     greetingTextInput.select(); 
+                }
+            }
+
             isDragging = false;
             isResizing = false;
             canvas.style.cursor = 'default';
@@ -1002,10 +1035,25 @@
 
         // --- ОТРИСОВКА ---
 
+        // Обновленная функция для получения размера шрифта с учетом масштаба
+        function getFontSize(item) {
+            // Пересчитываем размер шрифта относительно нового HD-разрешения
+            const baseSize = Math.min(canvas.width, canvas.height); 
+            let fixedSize;
+            switch(item.size) { // Используем item.size для базового размера
+                case 'small': fixedSize = baseSize * 0.04; break;
+                case 'large': fixedSize = baseSize * 0.07; break;
+                default: fixedSize = baseSize * 0.05;
+            }
+            // Применяем scaleFactor
+            return fixedSize * item.scaleFactor;
+        }
+
+
         function renderCard() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // 1. Отрисовка Фона 
+            // 1. Отрисовка Фона (логика Cover с левым выравниванием)
             if (state.selectedBackground) {
                 const bgImg = cachedImages.get(state.selectedBackground);
                 if (bgImg) {
@@ -1014,16 +1062,12 @@
                     const Iw = bgImg.width;
                     const Ih = bgImg.height;
                     
-                    // ИСПРАВЛЕНИЕ 1: Логика Cover с левым выравниванием
                     const scale = Math.max(Cw / Iw, Ch / Ih); // Масштаб для покрытия
                     
                     const scaledWidth = Iw * scale;
                     const scaledHeight = Ih * scale;
                     
-                    // X Offset: 0 для привязки к левому краю (если scaledWidth > Cw)
                     const dx = 0; 
-                    
-                    // Y Offset: Центрирование по вертикали
                     const dy = (Ch - scaledHeight) / 2;
                     
                     ctx.drawImage(bgImg, dx, dy, scaledWidth, scaledHeight);
@@ -1069,7 +1113,7 @@
             ctx.setLineDash([]); 
 
             const handleSize = 40; 
-            // ИСПРАВЛЕНИЕ 2: Отрисовка ручки изменения размера для стикеров И текста.
+            // Отрисовка ручки изменения размера для стикеров И текста.
             if (item.type === 'sticker' || item.type === 'text') {
                 // Ручка изменения размера (правый нижний угол)
                 ctx.fillStyle = '#014d77';
@@ -1102,16 +1146,6 @@
             }
         }
 
-        function getFontSize(size) {
-            // Пересчитываем размер шрифта относительно нового HD-разрешения
-            const baseSize = Math.min(canvas.width, canvas.height); 
-            switch(size) {
-                case 'small': return baseSize * 0.04;
-                case 'large': return baseSize * 0.07;
-                default: return baseSize * 0.05;
-            }
-        }
-
         function renderText(item) {
             if (!item.content) return;
 
@@ -1125,7 +1159,7 @@
                 default: fontFamily = "'Marck Script', cursive";
             }
             
-            const fontSize = getFontSize(item.size);
+            const fontSize = getFontSize(item); // Используем функцию с учетом масштаба
             const lineHeight = fontSize * 1.3;
             const maxWidth = item.width; 
             
@@ -1137,7 +1171,7 @@
             item.height = lines.length * lineHeight; // Обновляем высоту элемента
             
             let xPos = item.x; 
-            if (item.align === 'left') xPos = item.x - item.width / 2 + (canvas.width * 0.01); // Уменьшил отступ
+            if (item.align === 'left') xPos = item.x - item.width / 2 + (canvas.width * 0.01); 
             if (item.align === 'right') xPos = item.x + item.width / 2 - (canvas.width * 0.01);
 
             let startY = item.y - (item.height / 2) + (lineHeight / 2);
@@ -1213,7 +1247,7 @@
                     const Iw = bgImg.width;
                     const Ih = bgImg.height;
 
-                    // ИСПРАВЛЕНИЕ 1: Логика Cover с левым выравниванием для HD
+                    // Логика Cover с левым выравниванием для HD
                     const scale = Math.max(Cw / Iw, Ch / Ih);
                     
                     const scaledWidth = Iw * scale;
@@ -1255,17 +1289,19 @@
                 default: fontFamily = "'Marck Script', cursive";
             }
             
-            function getFontSizeHD(size) {
+            function getFontSizeHD(item) {
                  // Шкала должна быть такой же, как в обычной renderText
                  const baseSize = Math.min(hdWidth, hdHeight); 
-                 switch(size) {
-                    case 'small': return baseSize * 0.04;
-                    case 'large': return baseSize * 0.07;
-                    default: return baseSize * 0.05;
-                }
+                 let fixedSize;
+                 switch(item.size) { // Используем item.size для базового размера
+                    case 'small': fixedSize = baseSize * 0.04; break;
+                    case 'large': fixedSize = baseSize * 0.07; break;
+                    default: fixedSize = baseSize * 0.05;
+                 }
+                 return fixedSize * item.scaleFactor; // Применяем scaleFactor
             }
             
-            const fontSize = getFontSizeHD(item.size);
+            const fontSize = getFontSizeHD(item);
             const lineHeight = fontSize * 1.3;
             const maxWidth = item.width; 
             
@@ -1292,7 +1328,6 @@
         function clearCard() {
             // Оставляем только текст и логотип
             state.draggableItems = state.draggableItems.filter(item => item.type === 'text' || item.type === 'logo');
-            // ИСПРАВЛЕНИЕ 3: Изменен текст по умолчанию
             state.greetingText = 'С Новым годом!';
             greetingTextInput.value = state.greetingText;
             selectedElementIndex = -1;
@@ -1300,7 +1335,8 @@
             const textItem = state.draggableItems.find(item => item.type === 'text');
             if (textItem) {
                  textItem.content = state.greetingText;
-                 // Возвращаем текст в центр
+                 // Возвращаем масштаб и размер блока к дефолтным
+                 textItem.scaleFactor = 1.0; 
                  const { width: nativeWidth, height: nativeHeight } = config.orientations[state.orientation];
                  textItem.x = nativeWidth / 2;
                  textItem.y = nativeHeight * 0.45;
