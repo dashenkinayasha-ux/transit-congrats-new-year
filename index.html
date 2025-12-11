@@ -332,7 +332,7 @@
                     </div>
                     
                     <p style="color: #014d77; font-size: 16px; margin-top: 15px; font-family: 'Caveat', cursive; font-weight: 500;">
-                        На мобильных устройствах размер текста можно менять касанием пальцев, на ПК — перетаскиванием правого нижнего квадрата на рамке элемента.
+                        На мобильных устройствах размер текста и **стикеров** можно менять жестом **"щипок"**, на ПК — **перетаскиванием правого нижнего квадрата** на рамке элемента.
                     </p>
                 </div>
 
@@ -341,7 +341,7 @@
                     <div class="stickers-grid" id="stickersGrid">
                         </div>
                     <p style="color: #014d77; font-size: 16px; margin-top: 8px; font-family: 'Caveat', cursive; font-weight: 500;">
-                        Нажмите на стикер, чтобы добавить. Перемещайте, изменяйте размер или удаляйте стикер на открытке.
+                        Нажмите на стикер, чтобы добавить. Перемещайте, изменяйте размер и **удаляйте (красная кнопка "X")** на открытке. Вы также можете использовать клавиши **Delete/Backspace**.
                     </p>
                 </div>
             </div>
@@ -353,7 +353,7 @@
 
         <div class="actions">
             <button class="btn btn-download" onclick="downloadCard()">
-                💾 Скачать открытку
+                💾 Скачать открытку (HD)
             </button>
             <button class="btn btn-clear" onclick="clearCard()">
                 🗑️ Очистить
@@ -551,7 +551,7 @@
                 
                 if (displayWidth > mobileMaxWidth) {
                      displayWidth = mobileMaxWidth;
-                     displayHeight = displayWidth * (nativeWidth / nativeHeight);
+                     displayHeight = displayWidth * (nativeHeight / nativeWidth);
                 }
             }
 
@@ -563,10 +563,14 @@
             // Обновляем координаты элементов при смене ориентации 
             state.draggableItems.forEach(item => {
                 if (item.type === 'text') {
-                     // Центрируем текст по новым координатам
-                     item.x = nativeWidth / 2;
-                     // Сдвигаем немного вниз, чтобы не заезжал на логотип
-                     item.y = nativeHeight * 0.45;
+                     // ИСПРАВЛЕНИЕ БАГА: УДАЛЯЕМ ПРИНУДИТЕЛЬНОЕ ЦЕНТРИРОВАНИЕ. 
+                     // Текст сохраняет свое положение.
+                     // Добавляем проверку границ, чтобы текст не улетал при сильном изменении пропорций
+                     const halfWidth = item.width / 2;
+                     // Убеждаемся, что центр текста находится в пределах холста
+                     item.x = Math.max(halfWidth, Math.min(item.x, nativeWidth - halfWidth));
+                     item.y = Math.max(0, Math.min(item.y, nativeHeight));
+
                      item.width = nativeWidth * 0.8;
                 } else if (item.type === 'logo') {
                     // Пересчет логотипа
@@ -621,7 +625,22 @@
                 btn.addEventListener('click', (e) => {
                     document.querySelectorAll('.orientation-btn').forEach(b => b.classList.remove('active'));
                     e.target.classList.add('active');
-                    state.orientation = e.target.dataset.orientation;
+                    
+                    const newOrientation = e.target.dataset.orientation;
+                    
+                    // ИСПРАВЛЕНИЕ БАГА: ЯВНОЕ ПЕРЕЦЕНТРИРОВАНИЕ ПРИ СМЕНЕ ОРИЕНТАЦИИ
+                    if (state.orientation !== newOrientation) {
+                        state.orientation = newOrientation;
+                        const { width: nativeWidth, height: nativeHeight } = config.orientations[state.orientation];
+                        
+                        // Принудительное центрирование текста только при смене формата
+                        const textItem = state.draggableItems.find(item => item.type === 'text');
+                        if (textItem) {
+                            textItem.x = nativeWidth / 2;
+                            textItem.y = nativeHeight * 0.45;
+                        }
+                    }
+
                     setupCanvas(); 
                     renderCard();
                 });
@@ -1472,4 +1491,3 @@
     </script>
 </body>
 </html>
-
