@@ -992,15 +992,13 @@
             const scaleX = canvas.width / rect.width;
             const scaleY = canvas.height / rect.height;
 
-            let x, y;
-            if (e.touches) {
-                const touch = e.touches[0];
-                x = (touch.clientX - rect.left) * scaleX;
-                y = (touch.clientY - rect.top) * scaleY;
-            } else {
-                x = (e.clientX - rect.left) * scaleX;
-                y = (e.clientY - rect.top) * scaleY;
-            }
+            // ИСПРАВЛЕНИЕ БАГА 1: Более надежное получение координат тача/мыши
+            // Determine if it's a touch event and get the primary clientX/Y
+            const clientX = e.touches && e.touches.length > 0 ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches && e.touches.length > 0 ? e.touches[0].clientY : e.clientY;
+
+            let x = (clientX - rect.left) * scaleX;
+            let y = (clientY - rect.top) * scaleY;
 
             const selectedElement = state.draggableItems[selectedElementIndex];
 
@@ -1047,9 +1045,6 @@
                         selectedElement.height = newWidth / aspectRatio;
                         
                         // Пересчитываем положение, чтобы стикер оставался по центру относительно исходного центра
-                        const centerDistanceX = selectedElement.width/2 - elementStartWidth/2;
-                        const centerDistanceY = selectedElement.height/2 - elementStartHeight/2;
-                        
                         // elementStartX/Y это центр стикера до масштабирования. Вычитаем половину новых размеров.
                         selectedElement.x = elementStartX - selectedElement.width / 2;
                         selectedElement.y = elementStartY - selectedElement.height / 2;
@@ -1099,6 +1094,7 @@
                     selectedElement.x = newX;
                     selectedElement.y = newY;
                 } else if (selectedElement.type === 'text') {
+                    // Это корректно для центральных координат
                     selectedElement.x = newX;
                     selectedElement.y = newY;
                 }
@@ -1123,13 +1119,12 @@
                 hasMoved = true;
             }
 
-            const touch = e.touches[0];
-            drag({ clientX: touch.clientX, clientY: touch.clientY, preventDefault: e.preventDefault.bind(e) });
+            // ИСПРАВЛЕНИЕ БАГА 1: Передаем оригинальный touch event
+            drag(e); 
             e.preventDefault();
         }
 
         function stopDrag() {
-            // ИСПРАВЛЕНИЕ БАГА 2: Убрана логика фокусировки текстового поля при клике
             isDragging = false;
             isResizing = false;
             isPinching = false;
@@ -1170,10 +1165,9 @@
                     let scale, dx = 0, dy = 0;
 
                     if (state.orientation === 'vertical') {
-                         // ЗАПРОС 1: Вертикальная: масштабируем по высоте, выравниваем влево.
+                         // ЗАПРОС 1 (ПРЕДЫДУЩИЙ): Вертикальная: масштабируем по высоте, выравниваем влево.
                          scale = Ch / Ih;
-                         // Если изображение уже, чем холст, то его нужно сдвинуть так, чтобы левая часть была видна.
-                         // Если изображение шире холста (Iw * scale > Cw), то dy = 0, dx = 0
+                         // dx остается 0, показывая левую часть
                     } else {
                          // Горизонтальная: Cover strategy (масштабируем по max, центрируем)
                          scale = Math.max(Cw / Iw, Ch / Ih); 
@@ -1335,7 +1329,7 @@
         // --- ДЕЙСТВИЯ ---
 
         function downloadCard() {
-            // ЗАПРОС 4: Используем масштабирование 1.5x. (800x1200 -> 1200x1800)
+            // ЗАПРОС 4 (ПРЕДЫДУЩИЙ): Используем масштабирование 1.5x. (800x1200 -> 1200x1800)
             const scaleFactor = 1.5; 
             const hdCanvas = document.createElement('canvas');
             hdCanvas.width = canvas.width * scaleFactor;
@@ -1349,11 +1343,15 @@
             const dataURL = hdCanvas.toDataURL('image/png');
             const link = document.createElement('a');
             link.href = dataURL;
-            // ЗАПРОС 2: Атрибут download принуждает браузер к скачиванию, а не просмотру.
             link.download = 'novogodnyaya-otkrytka.png';
             document.body.appendChild(link);
             link.click();
-            document.body.removeChild(link);
+            
+            // ИСПРАВЛЕНИЕ БАГА 2: Добавляем таймаут для повышения совместимости с мобильными браузерами (iOS)
+            // Это помогает предотвратить открытие предварительного просмотра вместо скачивания.
+            setTimeout(() => {
+                document.body.removeChild(link);
+            }, 50);
         }
 
         function renderCardHD(hdCtx, Cw, Ch) {
@@ -1367,7 +1365,7 @@
                     let scale, dx = 0, dy = 0;
 
                     if (state.orientation === 'vertical') {
-                         // ЗАПРОС 1: Вертикальная: масштабируем по высоте, выравниваем влево.
+                         // Вертикальная: масштабируем по высоте, выравниваем влево.
                          scale = Ch / Ih;
                     } else {
                          // Горизонтальная: Cover strategy (масштабируем по max, центрируем)
@@ -1458,7 +1456,6 @@
         function clearCard() {
             // Оставляем только текст и логотип
             state.draggableItems = state.draggableItems.filter(item => item.type === 'text' || item.type === 'logo');
-            // ИСПРАВЛЕНИЕ: Гарантируем, что текст сбрасывается на пустую строку
             state.greetingText = ''; 
             greetingTextInput.value = state.greetingText;
             selectedElementIndex = -1;
