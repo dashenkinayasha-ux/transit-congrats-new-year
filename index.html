@@ -304,7 +304,7 @@
 
                 <div class="control-group">
                     <h3>Текст поздравления</h3>
-                    <textarea class="text-input" id="greetingText" placeholder="Введите ваше новогоднее поздравление...">С Новым Годом!</textarea>
+                    <textarea class="text-input" id="greetingText" placeholder="Введите ваше новогоднее поздравление..."></textarea>
                     
                     <h4>Шрифт текста</h4>
                     <div class="font-buttons">
@@ -332,7 +332,7 @@
                     </div>
                     
                     <p style="color: #014d77; font-size: 16px; margin-top: 15px; font-family: 'Caveat', cursive; font-weight: 500;">
-                        На мобильных устройствах размер текста можно менять жестом **"щипок" двумя пальцами** прямо на открытке.
+                        На мобильных устройствах размер текста можно менять жестом **"щипок"**, на ПК — **перетаскиванием правого нижнего квадрата** на рамке текста.
                     </p>
                 </div>
 
@@ -371,7 +371,7 @@
             },
             backgrounds: [
                 'bg1.png', 'bg2.png', 'bg3.png', 'bg4.png',
-                'bg5.png', 'bg91.png', 'bg10.png', 'bg11.png' // <-- ИСПРАВЛЕНИЕ БАГА 3
+                'bg5.png', 'bg91.png', 'bg10.png', 'bg11.png' // Используем bg91.png из предыдущего исправления
             ],
             stickers: [
                 'st1.png', 'st2.png', 'st3.png', 'st4.png',
@@ -391,7 +391,7 @@
             orientation: 'vertical',
             selectedBackground: config.backgrounds[0],
             draggableItems: [],
-            greetingText: 'С Новым Годом!',
+            greetingText: '', // ИСПРАВЛЕНИЕ БАГА 1: Пустой текст по умолчанию
             textFont: 'Marck Script',
             textSize: 'medium',
             textAlign: 'center',
@@ -416,13 +416,13 @@
         let selectedElementIndex = -1; 
         let isDragging = false;
         let isResizing = false;
-        let isPinching = false; // <-- ДОБАВЛЕНО для Бага 2 (Pinch)
-        let hasMoved = false;   // <-- ДОБАВЛЕНО для Бага 1 (Click vs Drag)
+        let isPinching = false; // Для pinch-to-zoom на мобильных
+        let hasMoved = false;   // Флаг для определения клика/тапа от перетаскивания
         let dragStartX, dragStartY;
         let elementStartX, elementStartY;
         let elementStartWidth, elementStartHeight;
-        let elementStartScale = 1.0; // <-- ДОБАВЛЕНО для Бага 2 (Pinch)
-        let initialPinchDistance = 0; // <-- ДОБАВЛЕНО для Бага 2 (Pinch)
+        let elementStartScale = 1.0; 
+        let initialPinchDistance = 0; 
 
         // --- ИНИЦИАЛИЗАЦИЯ И ЗАГРУЗКА ---
 
@@ -492,7 +492,7 @@
             const textItem = {
                 type: 'text',
                 x: nativeWidth / 2, 
-                y: nativeHeight * 0.45, // Сдвинуто ниже
+                y: nativeHeight * 0.45, 
                 width: nativeWidth * 0.8, 
                 height: 0, 
                 content: state.greetingText,
@@ -501,7 +501,7 @@
                 align: state.textAlign,
                 color: state.textColor,
                 fixedAspect: false,
-                scaleFactor: 1.0 // <-- ДОБАВЛЕНО для масштабирования текста
+                scaleFactor: 1.0 // Для изменения размера пальцами/ручкой
             };
             state.draggableItems.push(textItem);
         }
@@ -521,7 +521,7 @@
             }
         }
 
-        // Логика масштабирования холста (УЛУЧШЕНО для большего размера предпросмотра)
+        // Логика масштабирования холста
         function setupCanvas() {
             const { width: nativeWidth, height: nativeHeight } = config.orientations[state.orientation];
             
@@ -550,7 +550,7 @@
                 
                 if (displayWidth > mobileMaxWidth) {
                      displayWidth = mobileMaxWidth;
-                     displayHeight = displayWidth * (nativeHeight / nativeHeight);
+                     displayHeight = displayWidth * (nativeHeight / nativeWidth);
                 }
             }
 
@@ -759,17 +759,13 @@
                 if (item.type === 'logo') continue;
 
                 if (item.type === 'text') {
-                    // Для текста проверяем область вокруг центра
-                    const textBoundaryX = item.align === 'center' ? item.x - item.width / 2 : item.x - item.width / 2;
-                    const textBoundaryWidth = item.width;
-                    // Используем текущую высоту элемента
-                    const textBoundaryHeight = item.height || getFontSize(item) * 3 * 1.3; 
-
-                    if (x >= textBoundaryX && x <= textBoundaryX + textBoundaryWidth &&
-                        y >= item.y - textBoundaryHeight / 2 && y <= item.y + textBoundaryHeight / 2) {
+                    // Используем оценку Bounding Box
+                    const box = getBoundingBox(item);
+                    if (box && x >= box.x && x <= box.x + box.width &&
+                        y >= box.y && y <= box.y + box.height) {
                         return i;
                     }
-                } else if (item.type === 'sticker') { // Проверяем только стикеры
+                } else if (item.type === 'sticker') { 
                     if (x >= item.x && x <= item.x + item.width &&
                         y >= item.y && y <= item.y + item.height) {
                         return i;
@@ -785,7 +781,7 @@
 
             if (item.type === 'text') {
                 boxWidth = item.width;
-                // item.height рассчитывается в renderText, используем оценку, если 0
+                // item.height рассчитывается в renderText, используем текущее значение
                 const estimatedHeight = item.height || getFontSize(item) * 3 * 1.3; 
                 boxHeight = estimatedHeight; 
 
@@ -816,7 +812,6 @@
                 const btn = selectedElement.deleteButton;
                 
                 if (btn && x >= btn.x && x <= btn.x + btn.size && y >= btn.y && y <= btn.y + btn.size) {
-                    // Нажатие на кнопку удаления
                     state.draggableItems.splice(selectedElementIndex, 1);
                     selectedElementIndex = -1;
                     renderCard();
@@ -825,7 +820,6 @@
                 }
             }
             
-            // Если не нажата кнопка удаления, продолжаем обычный процесс
             if (index === -1) {
                 selectedElementIndex = -1; 
                 renderCard();
@@ -834,7 +828,6 @@
             
             const selectedElement = state.draggableItems[index];
             
-            // Запрещаем перетаскивание, если это ЛОГОТИП
             if (selectedElement.type === 'logo') { 
                 selectedElementIndex = -1; 
                 renderCard();
@@ -856,19 +849,18 @@
             elementStartY = selectedElement.y;
             elementStartWidth = selectedElement.width;
             elementStartHeight = selectedElement.height;
-            elementStartScale = selectedElement.scaleFactor || 1.0; // Сохраняем начальный масштаб
-            hasMoved = false; // <-- ДОБАВЛЕНО: Сброс флага движения
+            elementStartScale = selectedElement.scaleFactor || 1.0; 
+            hasMoved = false; 
 
+            // ИСПРАВЛЕНИЕ БАГА 3: Проверка на ручку изменения размера (Стикеры И Текст для ПК)
             const cornerSize = 30; 
-            // Проверка на ручку изменения размера (ТОЛЬКО СТИКЕРЫ - текст масштабируется pinch-жестом)
-            if (box && selectedElement.type === 'sticker' && 
+            if (box && (selectedElement.type === 'sticker' || selectedElement.type === 'text') && 
                 x > box.x + box.width - cornerSize &&
                 y > box.y + box.height - cornerSize) {
                 isResizing = true;
                 isDragging = false;
                 canvas.style.cursor = 'nwse-resize';
             } else {
-                // Если не попали в ручку, и это не логотип, то это перетаскивание
                 isDragging = true;
                 isResizing = false;
                 canvas.style.cursor = 'move';
@@ -879,12 +871,21 @@
         }
 
         function startDragTouch(e) {
-            // --- ЛОГИКА PINCH-TO-ZOOM (Баг 2) ---
+            // --- ЛОГИКА PINCH-TO-ZOOM (Баг 2 в предыдущем запросе) ---
             if (e.touches && e.touches.length === 2) {
-                selectedElementIndex = getElementAt(getCanvasTouchPosition({ touches: [e.touches[0]] }).x, getCanvasTouchPosition({ touches: [e.touches[0]] }).y);
-                const selectedElement = state.draggableItems[selectedElementIndex];
+                // Если выбран текст и начат жест двумя пальцами - это Pinch
+                let potentialIndex = getElementAt(getCanvasTouchPosition({ touches: [e.touches[0]] }).x, getCanvasTouchPosition({ touches: [e.touches[0]] }).y);
+                const selectedElement = state.draggableItems[potentialIndex];
                 
-                if (selectedElementIndex !== -1 && selectedElement.type === 'text') {
+                if (potentialIndex !== -1 && selectedElement.type === 'text') {
+                     // Выбираем элемент и переносим его наверх, если он не был выбран
+                     if (potentialIndex !== state.draggableItems.length - 1) {
+                         state.draggableItems.splice(potentialIndex, 1);
+                         state.draggableItems.push(selectedElement);
+                         potentialIndex = state.draggableItems.length - 1;
+                     }
+                     selectedElementIndex = potentialIndex;
+
                      isPinching = true;
                      isDragging = false;
                      isResizing = false;
@@ -912,7 +913,6 @@
                 const btn = selectedElement.deleteButton;
                 
                 if (btn && x >= btn.x && x <= btn.x + btn.size && y >= btn.y && y <= btn.y + btn.size) {
-                    // Нажатие на кнопку удаления
                     state.draggableItems.splice(selectedElementIndex, 1);
                     selectedElementIndex = -1;
                     renderCard();
@@ -929,7 +929,6 @@
 
             const selectedElement = state.draggableItems[index];
             
-            // Запрещаем перетаскивание, если это ЛОГОТИП
             if (selectedElement.type === 'logo') { 
                 selectedElementIndex = -1; 
                 renderCard();
@@ -952,11 +951,11 @@
             elementStartWidth = selectedElement.width;
             elementStartHeight = selectedElement.height;
             elementStartScale = selectedElement.scaleFactor || 1.0; 
-            hasMoved = false; // <-- ДОБАВЛЕНО: Сброс флага движения
+            hasMoved = false; 
 
-            // УВЕЛИЧЕННАЯ ОБЛАСТЬ ЗАХВАТА ДЛЯ МОБИЛЬНЫХ УСТРОЙСТВ (ТОЛЬКО СТИКЕРЫ)
+            // УВЕЛИЧЕННАЯ ОБЛАСТЬ ЗАХВАТА ДЛЯ МОБИЛЬНЫХ УСТРОЙСТВ (Стикеры И Текст)
             const cornerSize = 60; 
-            if (box && selectedElement.type === 'sticker' &&
+            if (box && (selectedElement.type === 'sticker' || selectedElement.type === 'text') &&
                 x > box.x + box.width - cornerSize &&
                 y > box.y + box.height - cornerSize) {
                 isResizing = true;
@@ -982,61 +981,27 @@
 
             const selectedElement = state.draggableItems[selectedElementIndex];
 
-            // Запрещаем перетаскивание/изменение размера для логотипа (хотя он не должен быть выбран)
-             if (selectedElement.type === 'logo') return;
+            if (selectedElement.type === 'logo') return;
 
             const deltaX = x - dragStartX;
             const deltaY = y - dragStartY;
 
-            // Проверка на движение (для Бага 1)
+            // Проверка на движение 
             if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
                 hasMoved = true;
             }
-
-            if (isResizing && selectedElement.type === 'sticker') { // Только стикеры
-                const newWidth = Math.max(40, elementStartWidth + deltaX);
-                
-                if (selectedElement.fixedAspect) {
-                     const img = cachedImages.get(selectedElement.src);
-                     const aspectRatio = img.width / img.height;
-                     selectedElement.width = newWidth;
-                     selectedElement.height = newWidth / aspectRatio;
-                } else {
-                    selectedElement.width = Math.min(canvas.width * 0.9, newWidth);
-                }
-            } else if (isDragging) {
-                let newX = elementStartX + deltaX;
-                let newY = elementStartY + deltaY;
-
-                if (selectedElement.type === 'sticker') { // Только стикеры
-                    newX = Math.max(-selectedElement.width / 4, Math.min(canvas.width - selectedElement.width * 3 / 4, newX));
-                    newY = Math.max(-selectedElement.height / 4, Math.min(canvas.height - selectedElement.height * 3 / 4, newY));
-                    selectedElement.x = newX;
-                    selectedElement.y = newY;
-                } else if (selectedElement.type === 'text') {
-                    // Логика перемещения текста
-                    selectedElement.x = newX;
-                    selectedElement.y = newY;
-                }
-            }
-
-            renderCard();
-        }
-
-        function dragTouch(e) {
-            // --- ЛОГИКА PINCH-TO-ZOOM (Баг 2) ---
-            if (isPinching && e.touches.length === 2) {
-                 const selectedElement = state.draggableItems[selectedElementIndex];
-                 if (selectedElement && selectedElement.type === 'text') {
+            
+            // --- ЛОГИКА PINCH (только для мобильных touchmove) ---
+            if (isPinching) {
+                 if (e.touches && e.touches.length === 2) {
                      const t1 = getCanvasTouchPosition({ touches: [e.touches[0]] });
                      const t2 = getCanvasTouchPosition({ touches: [e.touches[1]] });
                      const currentPinchDistance = Math.hypot(t2.x - t1.x, t2.y - t1.y);
                      
                      if (Math.abs(currentPinchDistance - initialPinchDistance) > 10) {
-                         hasMoved = true; // Считаем, что произошло движение/масштабирование
+                         hasMoved = true; 
                      }
                      
-                     // Расчет нового коэффициента масштабирования
                      const scaleMultiplier = currentPinchDistance / initialPinchDistance;
                      let newScale = elementStartScale * scaleMultiplier;
                      
@@ -1050,8 +1015,57 @@
                      return;
                  }
             }
-            
-            // --- ЛОГИКА ОДНОГО ПАЛЬЦА ---
+
+
+            // --- ЛОГИКА RESIZE (ПК и мобильный хваткой) ---
+            if (isResizing) { 
+                if (selectedElement.type === 'sticker') { // Стикеры: изменение ширины/высоты
+                    const newWidth = Math.max(40, elementStartWidth + deltaX);
+                    
+                    if (selectedElement.fixedAspect) {
+                         const img = cachedImages.get(selectedElement.src);
+                         const aspectRatio = img.width / img.height;
+                         selectedElement.width = newWidth;
+                         selectedElement.height = newWidth / aspectRatio;
+                    } else {
+                        selectedElement.width = Math.min(canvas.width * 0.9, newWidth);
+                    }
+                } else if (selectedElement.type === 'text') { // ИСПРАВЛЕНИЕ БАГА 3: Текст: изменение scaleFactor
+                    const delta = (deltaX + deltaY) * 0.5; // Усредняем и масштабируем
+                    const scaleChange = delta / Math.min(canvas.width, canvas.height) * 3; 
+                    
+                    let newScale = elementStartScale + scaleChange;
+                    
+                    newScale = Math.max(0.2, Math.min(3.0, newScale));
+                    
+                    selectedElement.scaleFactor = newScale;
+                }
+            } else if (isDragging) { // --- ЛОГИКА DRAG ---
+                let newX = elementStartX + deltaX;
+                let newY = elementStartY + deltaY;
+
+                if (selectedElement.type === 'sticker') { 
+                    newX = Math.max(-selectedElement.width / 4, Math.min(canvas.width - selectedElement.width * 3 / 4, newX));
+                    newY = Math.max(-selectedElement.height / 4, Math.min(canvas.height - selectedElement.height * 3 / 4, newY));
+                    selectedElement.x = newX;
+                    selectedElement.y = newY;
+                } else if (selectedElement.type === 'text') {
+                    selectedElement.x = newX;
+                    selectedElement.y = newY;
+                }
+            }
+
+            renderCard();
+        }
+
+        function dragTouch(e) {
+            // Если это Pinch, он будет обработан в drag()
+            if (isPinching) {
+                drag(e);
+                return;
+            }
+
+            // Если это single touch drag/resize
             if (selectedElementIndex === -1 || (!isDragging && !isResizing) || !e.touches || e.touches.length !== 1) return;
             
             // Если это single touch drag/resize, отмечаем как moved
@@ -1065,23 +1079,11 @@
         }
 
         function stopDrag() {
-            if (selectedElementIndex !== -1) {
-                const selectedElement = state.draggableItems[selectedElementIndex];
-                 
-                // *** ИСПРАВЛЕНИЕ БАГА 1: Фокусируем ввод текста БЕЗ СКРОЛЛА ***
-                if (!hasMoved && selectedElement.type === 'text') {
-                     // preventScroll: true ГАРАНТИРУЕТ, что страница не "прыгнет"
-                     if (greetingTextInput.focus) {
-                        greetingTextInput.focus({ preventScroll: true }); 
-                        greetingTextInput.select(); 
-                     }
-                }
-            }
-            
+            // ИСПРАВЛЕНИЕ БАГА 2: Убрана логика фокусировки текстового поля при клике
             isDragging = false;
             isResizing = false;
-            isPinching = false; // <-- ДОБАВЛЕНО: Сброс флага Pinch
-            hasMoved = false;   // <-- ДОБАВЛЕНО: Сброс флага движения
+            isPinching = false;
+            hasMoved = false;  
             canvas.style.cursor = 'default';
         }
 
@@ -1099,7 +1101,7 @@
                 default: fixedSize = baseSize * 0.05;
             }
             // Применяем scaleFactor (по умолчанию 1.0)
-            return fixedSize * (item.scaleFactor || 1.0); // <-- ИСПОЛЬЗУЕТ scaleFactor
+            return fixedSize * (item.scaleFactor || 1.0); 
         }
 
 
@@ -1166,13 +1168,16 @@
             ctx.setLineDash([]); 
 
             const handleSize = 40; 
-            // Ручка изменения размера (только для стикеров)
-            if (item.type === 'sticker') {
+            
+            // Ручка изменения размера (Стикеры И Текст)
+            if (item.type === 'sticker' || item.type === 'text') { 
                 // Ручка изменения размера (правый нижний угол)
                 ctx.fillStyle = '#014d77';
                 ctx.fillRect(box.x + box.width - handleSize / 2, box.y + box.height - handleSize / 2, handleSize, handleSize);
-
-                // КНОПКА УДАЛЕНИЯ (правый верхний угол)
+            }
+            
+            // КНОПКА УДАЛЕНИЯ (только для стикеров)
+            if (item.type === 'sticker') { 
                 const deleteSize = 40; 
                 item.deleteButton = {
                     x: box.x + box.width - deleteSize / 2,
@@ -1211,7 +1216,7 @@
                 default: fontFamily = "'Marck Script', cursive";
             }
             
-            const fontSize = getFontSize(item); // <-- ИСПОЛЬЗУЕТ item (с scaleFactor)
+            const fontSize = getFontSize(item); 
             const lineHeight = fontSize * 1.3;
             const maxWidth = item.width; 
             
@@ -1352,7 +1357,7 @@
                     case 'large': fixedSize = baseSize * 0.07; break;
                     default: fixedSize = baseSize * 0.05;
                  }
-                 return fixedSize * (item.scaleFactor || 1.0); // <-- ИСПОЛЬЗУЕТ scaleFactor
+                 return fixedSize * (item.scaleFactor || 1.0); 
             }
             
             const fontSize = getFontSizeHD(item);
@@ -1389,7 +1394,7 @@
         function clearCard() {
             // Оставляем только текст и логотип
             state.draggableItems = state.draggableItems.filter(item => item.type === 'text' || item.type === 'logo');
-            state.greetingText = 'С Новым Годом!';
+            state.greetingText = ''; // ИСПРАВЛЕНИЕ БАГА 1: Очищаем текст
             greetingTextInput.value = state.greetingText;
             selectedElementIndex = -1;
             
