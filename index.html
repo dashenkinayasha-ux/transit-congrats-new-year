@@ -332,7 +332,7 @@
                     </div>
                     
                     <p style="color: #014d77; font-size: 16px; margin-top: 15px; font-family: 'Caveat', cursive; font-weight: 500;">
-                        На мобильных устройствах размер текста можно менять жестом **"щипок"**, на ПК — **перетаскиванием правого нижнего квадрата** на рамке текста.
+                        На мобильных устройствах размер текста и **стикеров** можно менять жестом **"щипок"**, на ПК — **перетаскиванием правого нижнего квадрата** на рамке элемента.
                     </p>
                 </div>
 
@@ -371,7 +371,7 @@
             },
             backgrounds: [
                 'bg1.png', 'bg2.png', 'bg3.png', 'bg4.png',
-                'bg5.png', 'bg91.png', 'bg10.png', 'bg11.png' // Используем bg91.png из предыдущего исправления
+                'bg5.png', 'bg91.png', 'bg10.png', 'bg11.png'
             ],
             stickers: [
                 'st1.png', 'st2.png', 'st3.png', 'st4.png',
@@ -391,7 +391,7 @@
             orientation: 'vertical',
             selectedBackground: config.backgrounds[0],
             draggableItems: [],
-            greetingText: '', // ИСПРАВЛЕНИЕ БАГА 1: Пустой текст по умолчанию
+            greetingText: '', 
             textFont: 'Marck Script',
             textSize: 'medium',
             textAlign: 'center',
@@ -478,7 +478,8 @@
                 logoItem = {
                     type: 'logo',
                     src: config.logo,
-                    x: nativeWidth - width - 40, // Отступ 40 (увеличил с 20 для HD)
+                    // ИЗМЕНЕНИЕ: Отступ от правого края уменьшен с 40 до 20
+                    x: nativeWidth - width - 20, 
                     y: 40,
                     width: width,
                     height: height,
@@ -550,7 +551,7 @@
                 
                 if (displayWidth > mobileMaxWidth) {
                      displayWidth = mobileMaxWidth;
-                     displayHeight = displayWidth * (nativeHeight / nativeWidth);
+                     displayHeight = displayWidth * (nativeWidth / nativeHeight);
                 }
             }
 
@@ -573,7 +574,8 @@
                     const logoSize = Math.min(nativeWidth, nativeHeight) * 0.36;
                     item.width = logoSize;
                     item.height = logoSize / ratio;
-                    item.x = nativeWidth - item.width - 40; // Отступ 40
+                    // ИЗМЕНЕНИЕ: Отступ от правого края уменьшен с 40 до 20
+                    item.x = nativeWidth - item.width - 20; 
                     item.y = 40; // Отступ 40
                 } else if (item.type === 'sticker') {
                     // Проверяем, чтобы стикеры не выходили за границы
@@ -721,7 +723,8 @@
                 width: width,
                 height: height,
                 fixedAspect: true,
-                isFixed: false 
+                isFixed: false,
+                scaleFactor: 1.0 // Добавляем scaleFactor для стикеров, чтобы правильно работал pinch
             };
 
             // Добавляем стикер в конец, чтобы он был поверх других
@@ -871,13 +874,17 @@
         }
 
         function startDragTouch(e) {
-            // --- ЛОГИКА PINCH-TO-ZOOM (Баг 2 в предыдущем запросе) ---
+            // --- ЛОГИКА PINCH-TO-ZOOM для текста и стикеров (Запрос 3) ---
             if (e.touches && e.touches.length === 2) {
-                // Если выбран текст и начат жест двумя пальцами - это Pinch
-                let potentialIndex = getElementAt(getCanvasTouchPosition({ touches: [e.touches[0]] }).x, getCanvasTouchPosition({ touches: [e.touches[0]] }).y);
+                
+                const t1Pos = getCanvasTouchPosition({ touches: [e.touches[0]] });
+                const t2Pos = getCanvasTouchPosition({ touches: [e.touches[1]] });
+                
+                let potentialIndex = getElementAt(t1Pos.x, t1Pos.y);
                 const selectedElement = state.draggableItems[potentialIndex];
                 
-                if (potentialIndex !== -1 && selectedElement.type === 'text') {
+                // Проверяем, что выбран текст ИЛИ стикер
+                if (potentialIndex !== -1 && (selectedElement.type === 'text' || selectedElement.type === 'sticker')) {
                      // Выбираем элемент и переносим его наверх, если он не был выбран
                      if (potentialIndex !== state.draggableItems.length - 1) {
                          state.draggableItems.splice(potentialIndex, 1);
@@ -891,10 +898,19 @@
                      isResizing = false;
                      hasMoved = false;
                      
-                     const t1 = getCanvasTouchPosition({ touches: [e.touches[0]] });
-                     const t2 = getCanvasTouchPosition({ touches: [e.touches[1]] });
-                     initialPinchDistance = Math.hypot(t2.x - t1.x, t2.y - t1.y);
-                     elementStartScale = selectedElement.scaleFactor || 1.0;
+                     initialPinchDistance = Math.hypot(t2Pos.x - t1Pos.x, t2Pos.y - t1Pos.y);
+
+                     if (selectedElement.type === 'sticker') {
+                        elementStartWidth = selectedElement.width;
+                        elementStartHeight = selectedElement.height;
+                     } else {
+                        elementStartScale = selectedElement.scaleFactor || 1.0;
+                     }
+                     
+                     // Для стикеров также сохраняем центр для масштабирования
+                     elementStartX = selectedElement.x + selectedElement.width / 2; 
+                     elementStartY = selectedElement.y + selectedElement.height / 2;
+
                      e.preventDefault();
                      renderCard();
                      return;
@@ -976,8 +992,15 @@
             const scaleX = canvas.width / rect.width;
             const scaleY = canvas.height / rect.height;
 
-            const x = (e.clientX - rect.left) * scaleX;
-            const y = (e.clientY - rect.top) * scaleY;
+            let x, y;
+            if (e.touches) {
+                const touch = e.touches[0];
+                x = (touch.clientX - rect.left) * scaleX;
+                y = (touch.clientY - rect.top) * scaleY;
+            } else {
+                x = (e.clientX - rect.left) * scaleX;
+                y = (e.clientY - rect.top) * scaleY;
+            }
 
             const selectedElement = state.draggableItems[selectedElementIndex];
 
@@ -1003,12 +1026,38 @@
                      }
                      
                      const scaleMultiplier = currentPinchDistance / initialPinchDistance;
-                     let newScale = elementStartScale * scaleMultiplier;
                      
-                     // Ограничение масштаба
-                     newScale = Math.max(0.2, Math.min(3.0, newScale));
-                     
-                     selectedElement.scaleFactor = newScale;
+                     if (selectedElement.type === 'text') {
+                        let newScale = elementStartScale * scaleMultiplier;
+                        // Ограничение масштаба
+                        newScale = Math.max(0.2, Math.min(3.0, newScale));
+                        selectedElement.scaleFactor = newScale;
+
+                     } else if (selectedElement.type === 'sticker') {
+                        // ЛОГИКА PINCH ДЛЯ СТИКЕРОВ (Запрос 3)
+                        let newWidth = elementStartWidth * scaleMultiplier;
+                        
+                        // Получаем исходное соотношение сторон
+                        const img = cachedImages.get(selectedElement.src);
+                        const aspectRatio = img.width / img.height;
+
+                        newWidth = Math.max(40, Math.min(canvas.width * 0.9, newWidth)); // Enforce min/max size
+                        
+                        selectedElement.width = newWidth;
+                        selectedElement.height = newWidth / aspectRatio;
+                        
+                        // Пересчитываем положение, чтобы стикер оставался по центру относительно исходного центра
+                        const centerDistanceX = selectedElement.width/2 - elementStartWidth/2;
+                        const centerDistanceY = selectedElement.height/2 - elementStartHeight/2;
+                        
+                        // elementStartX/Y это центр стикера до масштабирования. Вычитаем половину новых размеров.
+                        selectedElement.x = elementStartX - selectedElement.width / 2;
+                        selectedElement.y = elementStartY - selectedElement.height / 2;
+
+                        // Ограничение на выход за границы
+                        selectedElement.x = Math.max(-selectedElement.width / 4, Math.min(canvas.width - selectedElement.width * 3 / 4, selectedElement.x));
+                        selectedElement.y = Math.max(-selectedElement.height / 4, Math.min(canvas.height - selectedElement.height * 3 / 4, selectedElement.y));
+                     }
                      
                      e.preventDefault();
                      renderCard();
@@ -1062,6 +1111,7 @@
             // Если это Pinch, он будет обработан в drag()
             if (isPinching) {
                 drag(e);
+                e.preventDefault(); // Запрещаем прокрутку
                 return;
             }
 
@@ -1108,7 +1158,7 @@
         function renderCard() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // 1. Отрисовка Фона (логика Cover с центрированием)
+            // 1. Отрисовка Фона (логика Cover с центрированием/выравниванием)
             if (state.selectedBackground) {
                 const bgImg = cachedImages.get(state.selectedBackground);
                 if (bgImg) {
@@ -1117,13 +1167,22 @@
                     const Iw = bgImg.width;
                     const Ih = bgImg.height;
                     
-                    const scale = Math.max(Cw / Iw, Ch / Ih); // Масштаб для покрытия (Cover)
+                    let scale, dx = 0, dy = 0;
+
+                    if (state.orientation === 'vertical') {
+                         // ЗАПРОС 1: Вертикальная: масштабируем по высоте, выравниваем влево.
+                         scale = Ch / Ih;
+                         // Если изображение уже, чем холст, то его нужно сдвинуть так, чтобы левая часть была видна.
+                         // Если изображение шире холста (Iw * scale > Cw), то dy = 0, dx = 0
+                    } else {
+                         // Горизонтальная: Cover strategy (масштабируем по max, центрируем)
+                         scale = Math.max(Cw / Iw, Ch / Ih); 
+                         dx = (Cw - Iw * scale) / 2; 
+                         dy = (Ch - Ih * scale) / 2;
+                    }
                     
                     const scaledWidth = Iw * scale;
                     const scaledHeight = Ih * scale;
-                    
-                    const dx = (Cw - scaledWidth) / 2; // Центрирование
-                    const dy = (Ch - scaledHeight) / 2; // Центрирование
                     
                     ctx.drawImage(bgImg, dx, dy, scaledWidth, scaledHeight);
                 } else {
@@ -1276,8 +1335,8 @@
         // --- ДЕЙСТВИЯ ---
 
         function downloadCard() {
-            // Для скачивания используем еще большее масштабирование для супер HD (x3 от HD)
-            const scaleFactor = 3; 
+            // ЗАПРОС 4: Используем масштабирование 1.5x. (800x1200 -> 1200x1800)
+            const scaleFactor = 1.5; 
             const hdCanvas = document.createElement('canvas');
             hdCanvas.width = canvas.width * scaleFactor;
             hdCanvas.height = canvas.height * scaleFactor;
@@ -1285,40 +1344,45 @@
             
             hdCtx.scale(scaleFactor, scaleFactor);
             
-            renderCardHD(hdCtx, hdCanvas.width / scaleFactor, hdCanvas.height / scaleFactor);
+            renderCardHD(hdCtx, canvas.width, canvas.height); // Передаем нативные размеры (800x1200)
 
             const dataURL = hdCanvas.toDataURL('image/png');
             const link = document.createElement('a');
             link.href = dataURL;
+            // ЗАПРОС 2: Атрибут download принуждает браузер к скачиванию, а не просмотру.
             link.download = 'novogodnyaya-otkrytka.png';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
         }
 
-        function renderCardHD(hdCtx, hdWidth, hdHeight) {
+        function renderCardHD(hdCtx, Cw, Ch) {
             // 1. Фон
             if (state.selectedBackground) {
                 const bgImg = cachedImages.get(state.selectedBackground);
                 if (bgImg) {
-                    const Cw = hdWidth;
-                    const Ch = hdHeight;
                     const Iw = bgImg.width;
                     const Ih = bgImg.height;
 
-                    // Логика Cover с центрированием для HD
-                    const scale = Math.max(Cw / Iw, Ch / Ih);
+                    let scale, dx = 0, dy = 0;
+
+                    if (state.orientation === 'vertical') {
+                         // ЗАПРОС 1: Вертикальная: масштабируем по высоте, выравниваем влево.
+                         scale = Ch / Ih;
+                    } else {
+                         // Горизонтальная: Cover strategy (масштабируем по max, центрируем)
+                         scale = Math.max(Cw / Iw, Ch / Ih); 
+                         dx = (Cw - Iw * scale) / 2; 
+                         dy = (Ch - Ih * scale) / 2;
+                    }
                     
                     const scaledWidth = Iw * scale;
                     const scaledHeight = Ih * scale;
                     
-                    const dx = (Cw - scaledWidth) / 2;
-                    const dy = (Ch - scaledHeight) / 2;
-                    
                     hdCtx.drawImage(bgImg, dx, dy, scaledWidth, scaledHeight);
                 } else {
                     hdCtx.fillStyle = '#f0f8ff';
-                    hdCtx.fillRect(0, 0, hdWidth, hdHeight);
+                    hdCtx.fillRect(0, 0, Cw, Ch);
                 }
             }
             
@@ -1330,7 +1394,7 @@
                         hdCtx.drawImage(img, item.x, item.y, item.width, item.height);
                     }
                 } else if (item.type === 'text') {
-                    renderTextHD(hdCtx, item, hdWidth, hdHeight);
+                    renderTextHD(hdCtx, item, Cw, Ch);
                 }
             });
         }
@@ -1394,7 +1458,8 @@
         function clearCard() {
             // Оставляем только текст и логотип
             state.draggableItems = state.draggableItems.filter(item => item.type === 'text' || item.type === 'logo');
-            state.greetingText = ''; // ИСПРАВЛЕНИЕ БАГА 1: Очищаем текст
+            // ИСПРАВЛЕНИЕ: Гарантируем, что текст сбрасывается на пустую строку
+            state.greetingText = ''; 
             greetingTextInput.value = state.greetingText;
             selectedElementIndex = -1;
             
