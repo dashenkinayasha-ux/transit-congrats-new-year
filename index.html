@@ -22,9 +22,9 @@
             justify-content: center;
             align-items: flex-start;
             position: relative;
-            /* КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Гарантируем, что body занимает всю ширину и имеет минимальный размер */
             width: 100vw; 
             min-width: 320px;
+            overflow-x: hidden;
         }
 
         /* Снежинки */
@@ -86,6 +86,22 @@
             border: 2px solid #e9ecef;
             max-height: 800px;
             overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #014d77 #e0e0e0;
+        }
+
+        .controls::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .controls::-webkit-scrollbar-track {
+            background: #e0e0e0;
+            border-radius: 4px;
+        }
+
+        .controls::-webkit-scrollbar-thumb {
+            background-color: #014d77;
+            border-radius: 4px;
         }
 
         .control-group {
@@ -123,6 +139,15 @@
             font-size: 16px;
             font-family: 'Caveat', cursive;
             font-weight: 600;
+            user-select: none;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .orientation-btn:active {
+            transform: scale(0.98);
         }
 
         .orientation-btn.active {
@@ -134,7 +159,7 @@
         .backgrounds-grid, .stickers-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 8px;
+            gap: 12px;
             max-height: none; 
             overflow-y: visible;
         }
@@ -147,11 +172,46 @@
             background-size: cover;
             background-position: center;
             transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+            min-width: 0;
+            min-height: 0;
+        }
+
+        .background-item::after, .sticker-item::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 6px;
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1);
+        }
+
+        .background-item:hover, .sticker-item:hover {
+            border-color: #014d77;
+            transform: scale(0.98);
         }
 
         .background-item.active, .sticker-item.active {
             border-color: #014d77;
             transform: scale(0.95);
+            box-shadow: 0 0 0 2px rgba(1, 77, 119, 0.2);
+        }
+
+        .background-item:active, .sticker-item:active {
+            transform: scale(0.95);
+        }
+
+        .error-fallback {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+            color: #6c757d;
+            font-size: 12px;
+            text-align: center;
         }
 
         .text-input {
@@ -164,6 +224,13 @@
             min-height: 80px;
             font-family: 'Caveat', cursive;
             font-weight: 500;
+            transition: border-color 0.3s;
+        }
+
+        .text-input:focus {
+            outline: none;
+            border-color: #014d77;
+            box-shadow: 0 0 0 3px rgba(1, 77, 119, 0.1);
         }
 
         .font-buttons, .align-buttons, .size-buttons, .color-control {
@@ -171,20 +238,26 @@
             gap: 8px;
             margin-top: 8px;
             align-items: center;
+            flex-wrap: wrap;
         }
         
         .color-control input[type="color"] {
-            width: 40px;
-            height: 40px;
+            width: 44px;
+            height: 44px;
             padding: 2px;
             border: 2px solid #dee2e6;
             border-radius: 5px;
             cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .color-control input[type="color"]:hover {
+            transform: scale(1.1);
         }
 
         .font-btn, .align-btn, .size-btn {
             flex: 1;
-            padding: 10px;
+            padding: 12px 8px;
             background: rgba(1, 77, 119, 0.1);
             border-radius: 5px;
             text-align: center;
@@ -194,6 +267,16 @@
             border: 1px solid #dee2e6;
             font-family: 'Caveat', cursive;
             font-weight: 600;
+            user-select: none;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 60px;
+        }
+
+        .font-btn:active, .align-btn:active, .size-btn:active {
+            transform: scale(0.98);
         }
 
         .font-btn.active, .align-btn.active, .size-btn.active {
@@ -215,7 +298,7 @@
             justify-content: center;
             align-items: center;
             position: relative;
-            min-height: 600px; /* Увеличен размер для ПК и планшетов */
+            min-height: 600px;
             width: 100%; 
             margin: 0 auto; 
         }
@@ -225,6 +308,9 @@
             border-radius: 10px;
             background: white;
             cursor: default; 
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         .actions {
@@ -232,6 +318,7 @@
             gap: 15px;
             justify-content: center;
             margin-top: 20px;
+            flex-wrap: wrap;
         }
 
         .btn {
@@ -247,13 +334,143 @@
             gap: 8px;
             font-family: 'Caveat', cursive;
             font-weight: 700;
+            min-height: 54px;
+            min-width: 200px;
+            justify-content: center;
         }
 
-        .btn-download { background: #014d77; color: white; }
-        .btn-download:hover { background: #013a5c; transform: translateY(-2px); }
+        .btn:active {
+            transform: translateY(2px);
+        }
 
-        .btn-clear { background: #6c757d; color: white; }
-        .btn-clear:hover { background: #5a6268; transform: translateY(-2px); }
+        .btn-download { 
+            background: #014d77; 
+            color: white; 
+        }
+        .btn-download:hover { 
+            background: #013a5c; 
+            transform: translateY(-2px); 
+        }
+
+        .btn-clear { 
+            background: #6c757d; 
+            color: white; 
+        }
+        .btn-clear:hover { 
+            background: #5a6268; 
+            transform: translateY(-2px); 
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            color: white;
+            font-size: 1.5em;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #014d77;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .mobile-actions {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 100;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .mobile-action-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #014d77;
+            color: white;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+        }
+
+        .mobile-action-btn:active {
+            transform: scale(0.9);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #014d77;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 1000;
+            opacity: 0;
+            transition: all 0.3s ease;
+            max-width: 90%;
+            text-align: center;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .undo-redo-controls {
+            display: flex;
+            gap: 8px;
+            margin-top: 15px;
+            justify-content: center;
+        }
+
+        .undo-redo-btn {
+            padding: 8px 16px;
+            background: rgba(1, 77, 119, 0.1);
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Caveat', cursive;
+            font-weight: 600;
+            transition: all 0.3s;
+            min-height: 36px;
+        }
+
+        .undo-redo-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .undo-redo-btn:active:not(:disabled) {
+            transform: scale(0.98);
+        }
 
         /* Адаптивность */
         @media (max-width: 968px) {
@@ -261,27 +478,96 @@
                 grid-template-columns: 1fr; 
                 gap: 15px; 
             }
-            .controls { order: 2; max-height: none; }
+            .controls { 
+                order: 2; 
+                max-height: none; 
+                max-height: 500px;
+            }
             .preview-section { 
                 order: 1; 
-                min-height: 350px; 
+                min-height: 400px; 
                 padding: 10px; 
             }
             h1 { font-size: 2.2em; }
+            .btn {
+                min-width: 150px;
+                padding: 12px 20px;
+                font-size: 16px;
+            }
+            .mobile-actions {
+                display: flex;
+            }
+            .controls.collapsed {
+                max-height: 60px;
+                overflow: hidden;
+            }
+            .control-group h3 {
+                font-size: 1.2em;
+            }
         }
 
         @media (max-width: 480px) {
             .container { 
-                padding: 10px; 
+                padding: 15px; 
+                margin: 10px;
             }
-            .controls { padding: 15px; }
-            .orientation-buttons { flex-direction: column; }
-            .font-btn, .align-btn, .size-btn { font-size: 12px; }
+            .controls { 
+                padding: 15px; 
+            }
+            .orientation-buttons { 
+                flex-direction: column; 
+            }
+            .font-btn, .align-btn, .size-btn { 
+                font-size: 13px;
+                padding: 10px 5px;
+                min-width: 50px;
+            }
+            .backgrounds-grid, .stickers-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+            }
+            .actions {
+                gap: 10px;
+            }
+            .btn {
+                min-width: 120px;
+                padding: 10px 15px;
+                font-size: 14px;
+            }
+            h1 {
+                font-size: 1.8em;
+                margin-bottom: 20px;
+            }
+        }
+
+        @media (max-width: 320px) {
+            .font-buttons, .align-buttons, .size-buttons {
+                flex-wrap: wrap;
+            }
+            .font-btn, .align-btn, .size-btn {
+                flex-basis: calc(50% - 4px);
+            }
         }
     </style>
 </head>
 <body onload="init()">
     <div class="snowflakes" id="snowflakes"></div>
+    
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <span id="loadingText">Загрузка...</span>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <div class="mobile-actions">
+        <button class="mobile-action-btn" onclick="toggleControls()" aria-label="Показать/скрыть панель управления">
+            ⚙️
+        </button>
+        <button class="mobile-action-btn" onclick="scrollToPreview()" aria-label="Перейти к открытке">
+            🎨
+        </button>
+    </div>
 
     <div class="container">
         <h1>🎄 Новогодний Конструктор Открыток 🎅</h1>
@@ -291,67 +577,74 @@
                 <div class="control-group">
                     <h3>Формат открытки</h3>
                     <div class="orientation-buttons">
-                        <div class="orientation-btn active" data-orientation="vertical">📱 Вертикальная</div>
-                        <div class="orientation-btn" data-orientation="horizontal">🖥️ Горизонтальная</div>
+                        <button class="orientation-btn active" data-orientation="vertical" aria-label="Вертикальная ориентация">📱 Вертикальная</button>
+                        <button class="orientation-btn" data-orientation="horizontal" aria-label="Горизонтальная ориентация">🖥️ Горизонтальная</button>
                     </div>
                 </div>
 
                 <div class="control-group">
                     <h3>Фон открытки</h3>
                     <div class="backgrounds-grid" id="backgroundsGrid">
-                        </div>
+                        <!-- Будет заполнено через JS -->
+                    </div>
                 </div>
 
                 <div class="control-group">
                     <h3>Текст поздравления</h3>
-                    <textarea class="text-input" id="greetingText" placeholder="Введите ваше новогоднее поздравление...">С Новым годом!</textarea>
+                    <textarea class="text-input" id="greetingText" placeholder="Введите ваше новогоднее поздравление..." aria-label="Текст поздравления">С Новым годом!</textarea>
                     
                     <h4>Шрифт текста</h4>
                     <div class="font-buttons">
-                        <div class="font-btn active font-marck" data-font="Marck Script">Marck Script</div>
-                        <div class="font-btn font-caveat" data-font="Caveat">Caveat</div>
-                        <div class="font-btn font-badscript" data-font="Bad Script">Bad Script</div>
+                        <button class="font-btn active font-marck" data-font="Marck Script" aria-label="Шрифт Marck Script">Marck Script</button>
+                        <button class="font-btn font-caveat" data-font="Caveat" aria-label="Шрифт Caveat">Caveat</button>
+                        <button class="font-btn font-badscript" data-font="Bad Script" aria-label="Шрифт Bad Script">Bad Script</button>
                     </div>
                     
                     <h4>Размер и цвет</h4>
                     <div class="size-buttons">
-                        <div class="size-btn" data-size="small">Маленький</div>
-                        <div class="size-btn active" data-size="medium">Средний</div>
-                        <div class="size-btn" data-size="large">Большой</div>
+                        <button class="size-btn" data-size="small" aria-label="Маленький размер текста">Маленький</button>
+                        <button class="size-btn active" data-size="medium" aria-label="Средний размер текста">Средний</button>
+                        <button class="size-btn" data-size="large" aria-label="Большой размер текста">Большой</button>
                     </div>
                     <div class="color-control">
-                        <label>Цвет:</label>
-                        <input type="color" id="textColor" value="#ffffff">
+                        <label for="textColor">Цвет:</label>
+                        <input type="color" id="textColor" value="#ffffff" aria-label="Выбор цвета текста">
                     </div>
                     
                     <h4>Выравнивание текста</h4>
                     <div class="align-buttons">
-                        <div class="align-btn active" data-align="center">По центру</div>
-                        <div class="align-btn" data-align="left">Слева</div>
-                        <div class="align-btn" data-align="right">Справа</div>
+                        <button class="align-btn active" data-align="center" aria-label="Выравнивание по центру">По центру</button>
+                        <button class="align-btn" data-align="left" aria-label="Выравнивание по левому краю">Слева</button>
+                        <button class="align-btn" data-align="right" aria-label="Выравнивание по правому краю">Справа</button>
                     </div>
                 </div>
 
                 <div class="control-group">
                     <h3>Новогодние стикеры</h3>
                     <div class="stickers-grid" id="stickersGrid">
-                        </div>
+                        <!-- Будет заполнено через JS -->
+                    </div>
                     <p style="color: #014d77; font-size: 16px; margin-top: 8px; font-family: 'Caveat', cursive; font-weight: 500;">
-                        Нажмите на стикер, чтобы добавить. Перемещайте, изменяйте размер и **удаляйте (красная кнопка "X")** на открытке. Вы также можете использовать клавиши **Delete/Backspace**.
+                        Нажмите на стикер, чтобы добавить. Перемещайте, изменяйте размер и <strong>удаляйте (красная кнопка "X")</strong> на открытке. Вы также можете использовать клавиши <strong>Delete/Backspace</strong> или сделать долгое нажатие для удаления.
                     </p>
+                </div>
+
+                <div class="undo-redo-controls">
+                    <button class="undo-redo-btn" onclick="undo()" id="undoBtn" disabled aria-label="Отменить последнее действие">↶ Отменить</button>
+                    <button class="undo-redo-btn" onclick="redo()" id="redoBtn" disabled aria-label="Повторить отмененное действие">↷ Повторить</button>
                 </div>
             </div>
 
             <div class="preview-section">
-                <canvas id="cardCanvas"></canvas>
+                <canvas id="cardCanvas" aria-label="Область предпросмотра открытки" role="img"></canvas>
             </div>
         </div>
 
         <div class="actions">
-            <button class="btn btn-download" onclick="downloadCard()">
+            <button class="btn btn-download" onclick="downloadCard()" aria-label="Скачать открытку в высоком качестве">
                 💾 Скачать открытку (HD)
             </button>
-            <button class="btn btn-clear" onclick="clearCard()">
+            <button class="btn btn-clear" onclick="clearCard()" aria-label="Очистить открытку">
                 🗑️ Очистить
             </button>
         </div>
@@ -360,7 +653,6 @@
     <script>
         // Конфигурация - файлы в корне сервера
         const config = {
-            // УДВОЕННОЕ HD-РАЗРЕШЕНИЕ для лучшего качества предпросмотра
             orientations: {
                 vertical: { width: 800, height: 1200 }, 
                 horizontal: { width: 1200, height: 800 } 
@@ -379,6 +671,7 @@
 
         // КЭШ ИЗОБРАЖЕНИЙ
         let cachedImages = new Map();
+        let imageLoadErrors = new Set();
         let backgroundItem = null;
         let logoItem = null;
 
@@ -392,8 +685,12 @@
             textSize: 'medium',
             textAlign: 'center',
             textColor: '#ffffff',
-            
         };
+
+        // История для undo/redo
+        let history = [];
+        let historyIndex = -1;
+        const MAX_HISTORY = 50;
 
         // Элементы DOM
         const canvas = document.getElementById('cardCanvas');
@@ -406,8 +703,13 @@
         const fontBtns = document.querySelectorAll('.font-btn');
         const alignBtns = document.querySelectorAll('.align-btn');
         const sizeBtns = document.querySelectorAll('.size-btn');
-        const previewSection = document.querySelector('.preview-section'); // Получаем контейнер
-        const controlsPanel = document.getElementById('controlsPanel'); // Получаем панель управления
+        const previewSection = document.querySelector('.preview-section');
+        const controlsPanel = document.getElementById('controlsPanel');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const loadingText = document.getElementById('loadingText');
+        const toast = document.getElementById('toast');
+        const undoBtn = document.getElementById('undoBtn');
+        const redoBtn = document.getElementById('redoBtn');
 
         // Перетаскиваемые элементы
         let selectedElementIndex = -1; 
@@ -416,55 +718,264 @@
         let dragStartX, dragStartY;
         let elementStartX, elementStartY;
         let elementStartWidth, elementStartHeight;
-        let elementStartScale; // Добавлено для масштабирования текста
-        let hasMoved = false; // Добавлено для определения "клика"
+        let elementStartScale;
+        let hasMoved = false;
+        let longPressTimer = null;
+        let isLongPress = false;
+        let touchStartTime = 0;
+
+        // --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
+
+        function showToast(message, duration = 3000) {
+            toast.textContent = message;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, duration);
+        }
+
+        function showLoading(text) {
+            loadingText.textContent = text;
+            loadingOverlay.style.display = 'flex';
+        }
+
+        function hideLoading() {
+            loadingOverlay.style.display = 'none';
+        }
+
+        function saveStateToHistory() {
+            // Сохраняем только текущее состояние (не весь массив history)
+            const stateCopy = {
+                orientation: state.orientation,
+                selectedBackground: state.selectedBackground,
+                draggableItems: JSON.parse(JSON.stringify(state.draggableItems)),
+                greetingText: state.greetingText,
+                textFont: state.textFont,
+                textSize: state.textSize,
+                textAlign: state.textAlign,
+                textColor: state.textColor
+            };
+            
+            // Удаляем все состояния после текущего индекса
+            history = history.slice(0, historyIndex + 1);
+            
+            // Добавляем новое состояние
+            history.push(stateCopy);
+            historyIndex++;
+            
+            // Ограничиваем размер истории
+            if (history.length > MAX_HISTORY) {
+                history.shift();
+                historyIndex--;
+            }
+            
+            updateUndoRedoButtons();
+        }
+
+        function restoreStateFromHistory(index) {
+            if (index < 0 || index >= history.length) return;
+            
+            const savedState = history[index];
+            
+            state.orientation = savedState.orientation;
+            state.selectedBackground = savedState.selectedBackground;
+            state.draggableItems = savedState.draggableItems;
+            state.greetingText = savedState.greetingText;
+            state.textFont = savedState.textFont;
+            state.textSize = savedState.textSize;
+            state.textAlign = savedState.textAlign;
+            state.textColor = savedState.textColor;
+            
+            // Обновляем UI
+            updateUIFromState();
+            setupCanvas();
+            renderCard();
+            updateUndoRedoButtons();
+        }
+
+        function undo() {
+            if (historyIndex > 0) {
+                historyIndex--;
+                restoreStateFromHistory(historyIndex);
+            }
+        }
+
+        function redo() {
+            if (historyIndex < history.length - 1) {
+                historyIndex++;
+                restoreStateFromHistory(historyIndex);
+            }
+        }
+
+        function updateUndoRedoButtons() {
+            undoBtn.disabled = historyIndex <= 0;
+            redoBtn.disabled = historyIndex >= history.length - 1;
+        }
+
+        function updateUIFromState() {
+            // Обновляем текстовое поле
+            greetingTextInput.value = state.greetingText;
+            
+            // Обновляем цвет
+            textColorInput.value = state.textColor;
+            
+            // Обновляем активные кнопки
+            document.querySelectorAll('.orientation-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.orientation === state.orientation);
+            });
+            
+            document.querySelectorAll('.font-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.font === state.textFont);
+            });
+            
+            document.querySelectorAll('.size-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.size === state.textSize);
+            });
+            
+            document.querySelectorAll('.align-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.align === state.textAlign);
+            });
+            
+            document.querySelectorAll('.background-item').forEach(item => {
+                item.classList.toggle('active', item.dataset.background === state.selectedBackground);
+            });
+        }
 
         // --- ИНИЦИАЛИЗАЦИЯ И ЗАГРУЗКА ---
 
         async function preloadAssets() {
             const allAssets = [...config.backgrounds, ...config.stickers, config.logo];
+            let loadedCount = 0;
+            
             const promises = allAssets.map(src => {
                 return new Promise((resolve) => {
                     if (cachedImages.has(src)) {
+                        loadedCount++;
+                        updateLoadingProgress(loadedCount, allAssets.length);
                         resolve();
                         return;
                     }
+                    
                     const img = new Image();
                     img.onload = () => {
                         cachedImages.set(src, img);
+                        loadedCount++;
+                        updateLoadingProgress(loadedCount, allAssets.length);
                         resolve();
                     };
                     img.onerror = () => {
                         console.error('Не удалось загрузить ресурс:', src);
-                        resolve(); 
+                        imageLoadErrors.add(src);
+                        // Создаем fallback изображение
+                        const fallback = createFallbackImage(src);
+                        cachedImages.set(src, fallback);
+                        loadedCount++;
+                        updateLoadingProgress(loadedCount, allAssets.length);
+                        resolve();
                     };
                     img.src = src;
+                    img.crossOrigin = "anonymous";
                 });
             });
+            
             return Promise.all(promises);
         }
 
+        function createFallbackImage(src) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 200;
+            canvas.height = 200;
+            const ctx = canvas.getContext('2d');
+            
+            // Градиентный фон
+            const gradient = ctx.createLinearGradient(0, 0, 200, 200);
+            gradient.addColorStop(0, '#f0f0f0');
+            gradient.addColorStop(1, '#d0d0d0');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 200, 200);
+            
+            // Текст ошибки
+            ctx.fillStyle = '#888';
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('Ошибка загрузки', 100, 90);
+            
+            // Имя файла
+            ctx.font = '12px Arial';
+            ctx.fillText(src.split('/').pop(), 100, 110);
+            
+            const img = new Image();
+            img.src = canvas.toDataURL();
+            return img;
+        }
+
+        function updateLoadingProgress(current, total) {
+            const percent = Math.round((current / total) * 100);
+            loadingText.textContent = `Загрузка ресурсов... ${percent}%`;
+        }
+
         async function init() {
-            await preloadAssets();
+            showLoading('Инициализация...');
+            
+            // Сначала создаем снежинки для немедленного отображения
             createSnowflakes();
+            
+            // Предзагрузка ресурсов
+            await preloadAssets();
+            
+            // Настройка интерфейса
             setupCanvas();
             loadInitialElements();
             loadBackgrounds();
             loadStickers();
             setupEventListeners();
             renderCard();
+            
+            // Сохраняем начальное состояние в историю
+            saveStateToHistory();
+            
+            hideLoading();
+            
+            // Добавляем слушатель для пересчета размеров
+            let resizeTimeout;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(setupCanvas, 100);
+            });
 
-            // Добавляем слушатель для пересчета размеров при изменении окна
-            window.addEventListener('resize', setupCanvas);
+            // Оптимизация анимации снежинок
+            optimizeSnowflakes();
+        }
+
+        function optimizeSnowflakes() {
+            // Останавливаем анимацию, когда страница не видна
+            document.addEventListener('visibilitychange', () => {
+                const snowflakes = document.querySelectorAll('.snowflake');
+                if (document.hidden) {
+                    snowflakes.forEach(s => s.style.animationPlayState = 'paused');
+                } else {
+                    snowflakes.forEach(s => s.style.animationPlayState = 'running');
+                }
+            });
+
+            // Также останавливаем анимацию при потере фокуса окна
+            window.addEventListener('blur', () => {
+                document.querySelectorAll('.snowflake').forEach(s => s.style.animationPlayState = 'paused');
+            });
+
+            window.addEventListener('focus', () => {
+                document.querySelectorAll('.snowflake').forEach(s => s.style.animationPlayState = 'running');
+            });
         }
 
         function loadInitialElements() {
-             // 1. Создаем Логотип
+            // 1. Создаем Логотип
             const logoImg = cachedImages.get(config.logo);
             const { width: nativeWidth, height: nativeHeight } = config.orientations.vertical;
 
             if (logoImg) {
-                // Логотип занимает 36% от меньшей стороны холста
                 const logoSize = Math.min(nativeWidth, nativeHeight) * 0.36; 
                 const ratio = logoImg.width / logoImg.height;
                 const width = logoSize;
@@ -473,7 +984,7 @@
                 logoItem = {
                     type: 'logo',
                     src: config.logo,
-                    x: nativeWidth - width - 40, // Отступ 40 (увеличил с 20 для HD)
+                    x: nativeWidth - width - 40,
                     y: 40,
                     width: width,
                     height: height,
@@ -487,7 +998,7 @@
             const textItem = {
                 type: 'text',
                 x: nativeWidth / 2, 
-                y: nativeHeight * 0.45, // Сдвинул ниже, чтобы не заезжал на логотип
+                y: nativeHeight * 0.45,
                 width: nativeWidth * 0.8, 
                 height: 0, 
                 content: state.greetingText,
@@ -496,7 +1007,7 @@
                 align: state.textAlign,
                 color: state.textColor,
                 fixedAspect: false,
-                scaleFactor: 1.0 // Добавляем фактор масштаба для изменения размера
+                scaleFactor: 1.0
             };
             state.draggableItems.push(textItem);
         }
@@ -516,22 +1027,18 @@
             }
         }
 
-        // Логика масштабирования холста (УЛУЧШЕНО для большего размера предпросмотра)
         function setupCanvas() {
             const { width: nativeWidth, height: nativeHeight } = config.orientations[state.orientation];
             
-            // Устанавливаем нативные размеры (рабочее пространство, теперь HD)
             canvas.width = nativeWidth;
             canvas.height = nativeHeight;
 
             const padding = parseInt(window.getComputedStyle(previewSection).paddingLeft) * 2;
             const maxContainerWidth = previewSection.clientWidth - padding; 
             
-            // Расчет максимально возможного размера, ограниченного шириной контейнера
             let displayWidth = maxContainerWidth;
             let displayHeight = displayWidth * (nativeHeight / nativeWidth);
 
-            // Ограничение по высоте, чтобы на мобильных и небольших экранах холст не выходил за пределы видимости
             const MAX_ALLOWED_HEIGHT = window.innerHeight * 0.9; 
             
             if (displayHeight > MAX_ALLOWED_HEIGHT) {
@@ -539,7 +1046,6 @@
                 displayWidth = displayHeight * (nativeWidth / nativeHeight);
             }
 
-            // Дополнительная проверка для узких мобильных экранов
             if (window.innerWidth <= 968) {
                 const mobileMaxWidth = document.querySelector('.creator-section').clientWidth - 10; 
                 
@@ -549,822 +1055,1031 @@
                 }
             }
 
-
-            // Применяем вычисленные размеры к CSS для отображения (это делает холст большим и четким)
             canvas.style.width = `${displayWidth}px`;
             canvas.style.height = `${displayHeight}px`;
 
-            // Обновляем координаты элементов при смене ориентации 
-            state.draggableItems.forEach(item => {
-                if (item.type === 'text') {
-                     // Центрируем текст по новым координатам
-                     item.x = nativeWidth / 2;
-                     // Сдвигаем немного вниз, чтобы не заезжал на логотип
-                     item.y = nativeHeight * 0.45;
-                     item.width = nativeWidth * 0.8;
-                } else if (item.type === 'logo') {
-                    // Пересчет логотипа
-                    const ratio = cachedImages.get(item.src).width / cachedImages.get(item.src).height;
-                    const logoSize = Math.min(nativeWidth, nativeHeight) * 0.36;
-                    item.width = logoSize;
-                    item.height = logoSize / ratio;
-                    item.x = nativeWidth - item.width - 40; // Отступ 40
-                    item.y = 40; // Отступ 40
-                } else if (item.type === 'sticker') {
-                    // Проверяем, чтобы стикеры не выходили за границы
-                    item.x = Math.max(0, Math.min(item.x, nativeWidth - item.width));
-                    item.y = Math.max(0, Math.min(item.y, nativeHeight - item.height));
-                }
-            });
-
-            renderCard();
-        }
-
-        function loadBackgrounds() {
-            backgroundsGrid.innerHTML = '';
-            config.backgrounds.forEach((bg) => {
-                const bgItem = document.createElement('div');
-                bgItem.className = 'background-item';
-                bgItem.style.backgroundImage = `url(${bg})`;
-                bgItem.dataset.background = bg;
-                bgItem.addEventListener('click', () => selectBackground(bg));
-                backgroundsGrid.appendChild(bgItem);
-
-                if (bg === state.selectedBackground) {
-                    bgItem.classList.add('active');
-                }
-            });
-        }
-
-        function loadStickers() {
-            stickersGrid.innerHTML = '';
-            config.stickers.forEach((sticker) => {
-                const stickerItem = document.createElement('div');
-                stickerItem.className = 'sticker-item';
-                stickerItem.style.backgroundImage = `url(${sticker})`;
-                stickerItem.dataset.sticker = sticker;
-                stickerItem.addEventListener('click', () => addSticker(sticker));
-                stickersGrid.appendChild(stickerItem);
-            });
-        }
-
-        function setupEventListeners() {
-            // Ориентация
-            document.querySelectorAll('.orientation-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    document.querySelectorAll('.orientation-btn').forEach(b => b.classList.remove('active'));
-                    e.target.classList.add('active');
-                    state.orientation = e.target.dataset.orientation;
-                    setupCanvas(); 
-                    renderCard();
-                });
-            });
-
-            // Текст, Цвет, Шрифты, Размер, Выравнивание
-            greetingTextInput.addEventListener('input', (e) => {
-                state.greetingText = e.target.value;
-                const textItem = state.draggableItems.find(item => item.type === 'text');
-                if (textItem) textItem.content = state.greetingText;
-                renderCard();
-            });
-
-            textColorInput.addEventListener('input', (e) => {
-                state.textColor = e.target.value;
-                const textItem = state.draggableItems.find(item => item.type === 'text');
-                if (textItem) textItem.color = state.textColor;
-                renderCard();
-            });
-
-            [...fontBtns, ...sizeBtns, ...alignBtns].forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const group = this.parentNode.className.split('-')[0];
-                    const datasetKey = group === 'font' ? 'font' : group === 'size' ? 'size' : 'align';
-                    
-                    document.querySelectorAll(`.${group}-btn`).forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    state[`text${datasetKey.charAt(0).toUpperCase() + datasetKey.slice(1)}`] = this.dataset[datasetKey];
-
-                    const textItem = state.draggableItems.find(item => item.type === 'text');
-                    if (textItem) {
-                         textItem[datasetKey] = this.dataset[datasetKey];
-                         // Сброс масштаба при изменении размера через кнопки
-                         if (datasetKey === 'size') {
-                            textItem.scaleFactor = 1.0; 
-                         }
-                    }
-                    renderCard();
-                });
-            });
-
-
-            // Перетаскивание на canvas
-            canvas.addEventListener('mousedown', startDrag);
-            document.addEventListener('mousemove', drag); 
-            document.addEventListener('mouseup', stopDrag);
-            
-            canvas.addEventListener('touchstart', startDragTouch);
-            document.addEventListener('touchmove', dragTouch, { passive: false });
-            document.addEventListener('touchend', stopDrag);
-
-            // Удаление элемента (Delete/Backspace)
-            document.addEventListener('keydown', (e) => {
-                if (selectedElementIndex !== -1 && (e.key === 'Delete' || e.key === 'Backspace')) {
-                    // Удалять можно только стикеры
-                    if (state.draggableItems[selectedElementIndex].type === 'sticker') { 
-                        state.draggableItems.splice(selectedElementIndex, 1);
-                        selectedElementIndex = -1;
-                        renderCard();
-                    }
-                }
-            });
-        }
-
-        function selectBackground(background) {
-            document.querySelectorAll('.background-item').forEach(item => {
-                item.classList.remove('active');
-                if (item.dataset.background === background) {
-                    item.classList.add('active');
-                }
-            });
-            state.selectedBackground = background;
-            renderCard();
-        }
-
-        function addSticker(sticker) {
-            const img = cachedImages.get(sticker);
-            if (!img) return;
-            
-            const { width: nativeWidth, height: nativeHeight } = config.orientations[state.orientation];
-
-            const size = Math.min(nativeWidth, nativeHeight) * 0.15;
-            const aspectRatio = img.width / img.height;
-            let width, height;
-
-            if (aspectRatio > 1) {
-                width = size;
-                height = size / aspectRatio;
-            } else {
-                height = size;
-                width = size * aspectRatio;
+            // Обновляем координаты
+        state.draggableItems.forEach(item => {
+if (item.type === 'text') {
+item.x = nativeWidth / 2;
+item.y = nativeHeight * 0.45;
+item.width = nativeWidth * 0.8;
+} else if (item.type === 'logo') {
+const ratio = cachedImages.get(item.src).width / cachedImages.get(item.src).height;
+const logoSize = Math.min(nativeWidth, nativeHeight) * 0.36;
+item.width = logoSize;
+item.height = logoSize / ratio;
+item.x = nativeWidth - item.width - 40;
+item.y = 40;
+} else if (item.type === 'sticker') {
+// Сохраняем пропорции при изменении ориентации
+const img = cachedImages.get(item.src);
+if (img) {
+const aspectRatio = img.width / img.height;
+if (item.fixedAspect) {
+item.height = item.width / aspectRatio;
+}
+}
+                // Ограничиваем позицию в пределах канваса
+                item.x = Math.max(-item.width * 0.5, Math.min(item.x, nativeWidth - item.width * 0.5));
+                item.y = Math.max(-item.height * 0.5, Math.min(item.y, nativeHeight - item.height * 0.5));
             }
+        });
 
-            const newSticker = {
-                type: 'sticker',
-                src: sticker,
-                x: nativeWidth / 2 - width / 2 + Math.random() * 40 - 20, // Больший разброс для HD
-                y: nativeHeight / 2 - height / 2 + Math.random() * 40 - 20,
-                width: width,
-                height: height,
-                fixedAspect: true,
-                isFixed: false 
-            };
+        renderCard();
+    }
 
-            // Добавляем стикер в конец, чтобы он был поверх других
-            state.draggableItems.push(newSticker);
-            // Выбираем новый стикер
-            selectedElementIndex = state.draggableItems.length - 1; 
+    function loadBackgrounds() {
+        backgroundsGrid.innerHTML = '';
+        config.backgrounds.forEach((bg) => {
+            const bgItem = document.createElement('div');
+            bgItem.className = 'background-item';
+            bgItem.style.backgroundImage = `url(${bg})`;
+            bgItem.dataset.background = bg;
+            bgItem.setAttribute('role', 'button');
+            bgItem.setAttribute('tabindex', '0');
+            bgItem.setAttribute('aria-label', `Выбрать фон ${bg}`);
+            
+            // Добавляем fallback для ошибок загрузки
+            if (imageLoadErrors.has(bg)) {
+                bgItem.classList.add('error-fallback');
+                bgItem.textContent = 'Ошибка';
+            }
+            
+            bgItem.addEventListener('click', () => selectBackground(bg));
+            bgItem.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    selectBackground(bg);
+                }
+            });
+            
+            backgroundsGrid.appendChild(bgItem);
+
+            if (bg === state.selectedBackground) {
+                bgItem.classList.add('active');
+            }
+        });
+    }
+
+    function loadStickers() {
+        stickersGrid.innerHTML = '';
+        config.stickers.forEach((sticker) => {
+            const stickerItem = document.createElement('div');
+            stickerItem.className = 'sticker-item';
+            stickerItem.style.backgroundImage = `url(${sticker})`;
+            stickerItem.dataset.sticker = sticker;
+            stickerItem.setAttribute('role', 'button');
+            stickerItem.setAttribute('tabindex', '0');
+            stickerItem.setAttribute('aria-label', `Добавить стикер ${sticker}`);
+            
+            // Добавляем fallback для ошибок загрузки
+            if (imageLoadErrors.has(sticker)) {
+                stickerItem.classList.add('error-fallback');
+                stickerItem.textContent = 'Ошибка';
+            }
+            
+            stickerItem.addEventListener('click', () => addSticker(sticker));
+            stickerItem.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    addSticker(sticker);
+                }
+            });
+            
+            stickersGrid.appendChild(stickerItem);
+        });
+    }
+
+    function setupEventListeners() {
+        // Ориентация - используем кнопки для лучшей доступности
+        document.querySelectorAll('.orientation-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.orientation-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                state.orientation = e.target.dataset.orientation;
+                saveStateToHistory();
+                setupCanvas();
+            });
+        });
+
+        // Текст
+        greetingTextInput.addEventListener('input', (e) => {
+            state.greetingText = e.target.value;
+            const textItem = state.draggableItems.find(item => item.type === 'text');
+            if (textItem) {
+                textItem.content = state.greetingText;
+                saveStateToHistory();
+            }
             renderCard();
-        }
+        });
 
-        // --- ЛОГИКА ПЕРЕТАСКИВАНИЯ ---
+        textColorInput.addEventListener('input', (e) => {
+            state.textColor = e.target.value;
+            const textItem = state.draggableItems.find(item => item.type === 'text');
+            if (textItem) {
+                textItem.color = state.textColor;
+                saveStateToHistory();
+            }
+            renderCard();
+        });
 
-        function getCanvasMousePosition(e) {
-            const rect = canvas.getBoundingClientRect();
-            return {
-                x: (e.clientX - rect.left) * (canvas.width / rect.width),
-                y: (e.clientY - rect.top) * (canvas.height / rect.height)
-            };
+        // Шрифты, размер, выравнивание
+        [...fontBtns, ...sizeBtns, ...alignBtns].forEach(btn => {
+            btn.addEventListener('click', function() {
+                const group = this.parentNode.className.split('-')[0];
+                const datasetKey = group === 'font' ? 'font' : group === 'size' ? 'size' : 'align';
+                
+                document.querySelectorAll(`.${group}-btn`).forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                state[`text${datasetKey.charAt(0).toUpperCase() + datasetKey.slice(1)}`] = this.dataset[datasetKey];
+
+                const textItem = state.draggableItems.find(item => item.type === 'text');
+                if (textItem) {
+                     textItem[datasetKey] = this.dataset[datasetKey];
+                     if (datasetKey === 'size') {
+                        textItem.scaleFactor = 1.0;
+                     }
+                     saveStateToHistory();
+                }
+                renderCard();
+            });
+        });
+
+        // Перетаскивание на canvas
+        canvas.addEventListener('mousedown', startDrag);
+        canvas.addEventListener('mouseup', stopDrag);
+        
+        canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+        canvas.addEventListener('touchend', handleTouchEnd);
+        canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+
+        // Удаление элемента (Delete/Backspace)
+        document.addEventListener('keydown', (e) => {
+            if (selectedElementIndex !== -1 && (e.key === 'Delete' || e.key === 'Backspace')) {
+                if (state.draggableItems[selectedElementIndex].type === 'sticker') { 
+                    state.draggableItems.splice(selectedElementIndex, 1);
+                    selectedElementIndex = -1;
+                    saveStateToHistory();
+                    renderCard();
+                    showToast('Стикер удален');
+                }
+            }
+        });
+
+        // Долгое нажатие для удаления (мобильные)
+        canvas.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            if (selectedElementIndex !== -1 && state.draggableItems[selectedElementIndex].type === 'sticker') {
+                if (confirm('Удалить этот стикер?')) {
+                    state.draggableItems.splice(selectedElementIndex, 1);
+                    selectedElementIndex = -1;
+                    saveStateToHistory();
+                    renderCard();
+                    showToast('Стикер удален');
+                }
+            }
+        });
+    }
+
+    // --- ОБРАБОТКА КАСАНИЙ (ИСПРАВЛЕННАЯ) ---
+
+    function handleTouchStart(e) {
+        e.preventDefault();
+        const { x, y } = getCanvasTouchPosition(e);
+        
+        // Запоминаем время начала касания для долгого нажатия
+        touchStartTime = Date.now();
+        
+        // Запускаем таймер долгого нажатия
+        longPressTimer = setTimeout(() => {
+            isLongPress = true;
+            // Если это стикер, показываем меню удаления
+            const index = getElementAt(x, y);
+            if (index !== -1 && state.draggableItems[index].type === 'sticker') {
+                if (confirm('Удалить этот стикер?')) {
+                    state.draggableItems.splice(index, 1);
+                    saveStateToHistory();
+                    renderCard();
+                    showToast('Стикер удален');
+                }
+            }
+            longPressTimer = null;
+        }, 800); // 800ms для долгого нажатия
+        
+        // Обычное касание
+        startDragTouch(e);
+    }
+
+    function handleTouchMove(e) {
+        if (isLongPress) {
+            e.preventDefault();
+            return;
         }
         
-        function getCanvasTouchPosition(e) {
-            const touch = e.touches[0];
-            const rect = canvas.getBoundingClientRect();
-            return {
-                x: (touch.clientX - rect.left) * (canvas.width / rect.width),
-                y: (touch.clientY - rect.top) * (canvas.height / rect.height)
-            };
+        // Отменяем долгое нажатие при движении
+        if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
         }
+        
+        // Если движение было значительным, увеличиваем порог для hasMoved
+        const touch = e.touches[0];
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const x = (touch.clientX - rect.left) * scaleX;
+        const y = (touch.clientY - rect.top) * scaleY;
+        
+        const deltaX = Math.abs(x - dragStartX);
+        const deltaY = Math.abs(y - dragStartY);
+        
+        // Увеличиваем порог движения для мобильных устройств
+        if (deltaX > 15 || deltaY > 15) {
+            hasMoved = true;
+        }
+        
+        dragTouch(e);
+    }
 
-        function getElementAt(x, y) {
-            // Ищем с конца, чтобы выбрать верхний элемент
-            for (let i = state.draggableItems.length - 1; i >= 0; i--) {
-                const item = state.draggableItems[i];
-
-                // ИГНОРИРУЕМ ЛОГОТИП 
-                if (item.type === 'logo') continue;
-
-                if (item.type === 'text') {
-                    // Для текста проверяем область вокруг центра
-                    const box = getBoundingBox(item);
-                    if (box && x >= box.x && x <= box.x + box.width &&
-                        y >= box.y && y <= box.y + box.height) {
-                        return i;
-                    }
-                } else if (item.type === 'sticker') { // Проверяем только стикеры
-                    if (x >= item.x && x <= item.x + item.width &&
-                        y >= item.y && y <= item.y + item.height) {
-                        return i;
-                    }
+    function handleTouchEnd(e) {
+        // Отменяем таймер долгого нажатия
+        if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+        }
+        
+        // Если было долгое нажатие, не обрабатываем как обычный клик
+        if (isLongPress) {
+            isLongPress = false;
+            return;
+        }
+        
+        // Проверяем, было ли это быстрым касанием (тапом)
+        const touchDuration = Date.now() - touchStartTime;
+        if (touchDuration < 300) { // 300ms для тапа
+            // Для быстрого касания увеличиваем порог движения
+            if (!hasMoved) {
+                const touch = e.changedTouches[0];
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                const x = (touch.clientX - rect.left) * scaleX;
+                const y = (touch.clientY - rect.top) * scaleY;
+                
+                const index = getElementAt(x, y);
+                if (index !== -1 && state.draggableItems[index].type === 'text') {
+                    // Небольшая задержка перед фокусировкой
+                    setTimeout(() => {
+                        greetingTextInput.focus({ preventScroll: true });
+                        // Прокручиваем к полю ввода только если оно не видно
+                        if (!isElementInViewport(greetingTextInput)) {
+                            greetingTextInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }, 50);
                 }
             }
-            return -1;
+        }
+        
+        stopDrag(e);
+    }
+
+    function isElementInViewport(el) {
+        const rect = el.getBoundingClientRect();
+        return (
+            rect.top >= 0 &&
+            rect.left >= 0 &&
+            rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+            rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+        );
+    }
+
+    function selectBackground(background) {
+        document.querySelectorAll('.background-item').forEach(item => {
+            item.classList.remove('active');
+            if (item.dataset.background === background) {
+                item.classList.add('active');
+            }
+        });
+        state.selectedBackground = background;
+        saveStateToHistory();
+        renderCard();
+    }
+
+    function addSticker(sticker) {
+        const img = cachedImages.get(sticker);
+        if (!img) {
+            showToast('Не удалось загрузить стикер', 2000);
+            return;
+        }
+        
+        const { width: nativeWidth, height: nativeHeight } = config.orientations[state.orientation];
+
+        const size = Math.min(nativeWidth, nativeHeight) * 0.15;
+        const aspectRatio = img.width / img.height;
+        let width, height;
+
+        if (aspectRatio > 1) {
+            width = size;
+            height = size / aspectRatio;
+        } else {
+            height = size;
+            width = size * aspectRatio;
         }
 
-        // Вспомогательная функция для получения Bounding Box (Top-Left, Width, Height)
-        function getBoundingBox(item) {
-            let boxX, boxY, boxWidth, boxHeight;
+        const newSticker = {
+            type: 'sticker',
+            src: sticker,
+            x: nativeWidth / 2 - width / 2 + Math.random() * 40 - 20,
+            y: nativeHeight / 2 - height / 2 + Math.random() * 40 - 20,
+            width: width,
+            height: height,
+            fixedAspect: true,
+            isFixed: false 
+        };
+
+        state.draggableItems.push(newSticker);
+        selectedElementIndex = state.draggableItems.length - 1;
+        saveStateToHistory();
+        renderCard();
+        showToast('Стикер добавлен', 1500);
+    }
+
+    // --- ЛОГИКА ПЕРЕТАСКИВАНИЯ (ИСПРАВЛЕННАЯ) ---
+
+    function getCanvasMousePosition(e) {
+        const rect = canvas.getBoundingClientRect();
+        return {
+            x: (e.clientX - rect.left) * (canvas.width / rect.width),
+            y: (e.clientY - rect.top) * (canvas.height / rect.height)
+        };
+    }
+    
+    function getCanvasTouchPosition(e) {
+        const touch = e.touches[0];
+        const rect = canvas.getBoundingClientRect();
+        return {
+            x: (touch.clientX - rect.left) * (canvas.width / rect.width),
+            y: (touch.clientY - rect.top) * (canvas.height / rect.height)
+        };
+    }
+
+    function getElementAt(x, y) {
+        // Ищем с конца, чтобы выбрать верхний элемент
+        for (let i = state.draggableItems.length - 1; i >= 0; i--) {
+            const item = state.draggableItems[i];
+
+            if (item.type === 'logo') continue;
 
             if (item.type === 'text') {
-                boxWidth = item.width;
-                // item.height рассчитывается в renderText, используем дефолтное значение, если 0
-                // Для расчета зоны клика, используем оценку: 3 строки по базовому размеру шрифта
-                const baseFontSize = getFontSize({ size: item.size, scaleFactor: 1.0 });
-                boxHeight = item.height || baseFontSize * 3 * 1.3; 
-
-                // Рамка всегда центрирована относительно item.x
-                boxX = item.x - boxWidth / 2; 
-                boxY = item.y - boxHeight / 2;
-            } else if (item.type === 'sticker' || item.type === 'logo') {
-                boxX = item.x;
-                boxY = item.y;
-                boxWidth = item.width;
-                boxHeight = item.height;
-            } else {
-                return null;
-            }
-            return { x: boxX, y: boxY, width: boxWidth, height: boxHeight };
-        }
-
-
-        function startDrag(e) {
-            const { x, y } = getCanvasMousePosition(e);
-            
-            let index = getElementAt(x, y);
-            const box = index !== -1 ? getBoundingBox(state.draggableItems[index]) : null;
-
-            // 1. ПРОВЕРКА НАЖАТИЯ НА КНОПКУ УДАЛЕНИЯ (ПК)
-            if (selectedElementIndex !== -1 && state.draggableItems[selectedElementIndex].type === 'sticker') {
-                const selectedElement = state.draggableItems[selectedElementIndex];
-                const btn = selectedElement.deleteButton;
-                
-                if (btn && x >= btn.x && x <= btn.x + btn.size && y >= btn.y && y <= btn.y + btn.size) {
-                    // Нажатие на кнопку удаления
-                    state.draggableItems.splice(selectedElementIndex, 1);
-                    selectedElementIndex = -1;
-                    renderCard();
-                    e.preventDefault();
-                    return;
+                const box = getBoundingBox(item);
+                if (box && x >= box.x && x <= box.x + box.width &&
+                    y >= box.y && y <= box.y + box.height) {
+                    return i;
+                }
+            } else if (item.type === 'sticker') {
+                // Увеличиваем область клика для стикеров
+                const tolerance = 10; // пикселей
+                if (x >= item.x - tolerance && x <= item.x + item.width + tolerance &&
+                    y >= item.y - tolerance && y <= item.y + item.height + tolerance) {
+                    return i;
                 }
             }
-            
-            // Если не нажата кнопка удаления, продолжаем обычный процесс
-            if (index === -1) {
-                selectedElementIndex = -1; 
-                renderCard();
-                return;
-            }
-            
-            const selectedElement = state.draggableItems[index];
-            
-            // Запрещаем перетаскивание, если это ЛОГОТИП
-            if (selectedElement.type === 'logo') { 
-                selectedElementIndex = -1; 
-                renderCard();
-                return;
-            }
-
-            // Перемещаем выбранный элемент наверх 
-            if (index !== state.draggableItems.length - 1) {
-                state.draggableItems.splice(index, 1);
-                state.draggableItems.push(selectedElement);
-                selectedElementIndex = state.draggableItems.length - 1;
-            } else {
-                selectedElementIndex = index;
-            }
-            
-            dragStartX = x;
-            dragStartY = y;
-            elementStartX = selectedElement.x;
-            elementStartY = selectedElement.y;
-            elementStartWidth = selectedElement.width;
-            elementStartHeight = selectedElement.height;
-            elementStartScale = selectedElement.scaleFactor || 1.0; // Сохраняем начальный масштаб
-
-            hasMoved = false; // Сброс флага движения
-
-            const cornerSize = 30; 
-            // Проверка на ручку изменения размера
-            if (box && (selectedElement.type === 'sticker' || selectedElement.type === 'text') && 
-                x > box.x + box.width - cornerSize &&
-                y > box.y + box.height - cornerSize) {
-                isResizing = true;
-                isDragging = false;
-                canvas.style.cursor = 'nwse-resize';
-            } else {
-                // Если не попали в ручку, и это не логотип, то это перетаскивание
-                isDragging = true;
-                isResizing = false;
-                canvas.style.cursor = 'move';
-            }
-            
-            e.preventDefault();
-            renderCard(); 
         }
+        return -1;
+    }
 
-        function startDragTouch(e) {
-             const { x, y } = getCanvasTouchPosition(e);
-            
-            let index = getElementAt(x, y);
-            const box = index !== -1 ? getBoundingBox(state.draggableItems[index]) : null;
+    function getBoundingBox(item) {
+        let boxX, boxY, boxWidth, boxHeight;
 
-            // 1. ПРОВЕРКА НАЖАТИЯ НА КНОПКУ УДАЛЕНИЯ (МОБИЛЬНЫЕ)
-            if (selectedElementIndex !== -1 && state.draggableItems[selectedElementIndex].type === 'sticker') {
-                const selectedElement = state.draggableItems[selectedElementIndex];
-                const btn = selectedElement.deleteButton;
-                
-                if (btn && x >= btn.x && x <= btn.x + btn.size && y >= btn.y && y <= btn.y + btn.size) {
-                    // Нажатие на кнопку удаления
-                    state.draggableItems.splice(selectedElementIndex, 1);
-                    selectedElementIndex = -1;
-                    renderCard();
-                    e.preventDefault();
-                    return;
-                }
-            }
-
-            if (index === -1) {
-                selectedElementIndex = -1; 
-                renderCard();
-                return;
-            }
-
-            const selectedElement = state.draggableItems[index];
-            
-            // Запрещаем перетаскивание, если это ЛОГОТИП
-            if (selectedElement.type === 'logo') { 
-                selectedElementIndex = -1; 
-                renderCard();
-                return;
-            }
-
-
-            if (index !== state.draggableItems.length - 1) {
-                state.draggableItems.splice(index, 1);
-                state.draggableItems.push(selectedElement);
-                selectedElementIndex = state.draggableItems.length - 1;
-            } else {
-                selectedElementIndex = index;
-            }
-
-            dragStartX = x;
-            dragStartY = y;
-            elementStartX = selectedElement.x;
-            elementStartY = selectedElement.y;
-            elementStartWidth = selectedElement.width;
-            elementStartHeight = selectedElement.height;
-            elementStartScale = selectedElement.scaleFactor || 1.0; // Сохраняем начальный масштаб
-
-            hasMoved = false; // Сброс флага движения
-
-            // УВЕЛИЧЕННАЯ ОБЛАСТЬ ЗАХВАТА ДЛЯ МОБИЛЬНЫХ УСТРОЙСТВ
-            const cornerSize = 60; 
-            // Проверка на ручку изменения размера
-            if (box && (selectedElement.type === 'sticker' || selectedElement.type === 'text') && 
-                x > box.x + box.width - cornerSize &&
-                y > box.y + box.height - cornerSize) {
-                isResizing = true;
-                isDragging = false;
-            } else {
-                // Если не попали в ручку, и это не логотип, то это перетаскивание
-                isDragging = true;
-                isResizing = false;
-            }
-            
-            e.preventDefault();
-            renderCard();
+        if (item.type === 'text') {
+            boxWidth = item.width;
+            const baseFontSize = getFontSize({ size: item.size, scaleFactor: 1.0 });
+            boxHeight = item.height || baseFontSize * 3 * 1.3;
+            boxX = item.x - boxWidth / 2; 
+            boxY = item.y - boxHeight / 2;
+        } else if (item.type === 'sticker' || item.type === 'logo') {
+            boxX = item.x;
+            boxY = item.y;
+            boxWidth = item.width;
+            boxHeight = item.height;
+        } else {
+            return null;
         }
+        
+        // Увеличиваем bounding box для лучшего захвата на мобильных
+        const padding = window.innerWidth <= 968 ? 15 : 5;
+        return { 
+            x: boxX - padding, 
+            y: boxY - padding, 
+            width: boxWidth + padding * 2, 
+            height: boxHeight + padding * 2 
+        };
+    }
 
-        function drag(e) {
-            if (selectedElementIndex === -1 || (!isDragging && !isResizing)) return;
-            
-            const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
+    function startDrag(e) {
+        const { x, y } = getCanvasMousePosition(e);
+        
+        let index = getElementAt(x, y);
+        const box = index !== -1 ? getBoundingBox(state.draggableItems[index]) : null;
 
-            const x = (e.clientX - rect.left) * scaleX;
-            const y = (e.clientY - rect.top) * scaleY;
-
+        // Проверка нажатия на кнопку удаления
+        if (selectedElementIndex !== -1 && state.draggableItems[selectedElementIndex].type === 'sticker') {
             const selectedElement = state.draggableItems[selectedElementIndex];
-
-            // Запрещаем перетаскивание/изменение размера для логотипа (хотя он не должен быть выбран)
-             if (selectedElement.type === 'logo') return;
-
-            const deltaX = x - dragStartX;
-            const deltaY = y - dragStartY;
-
-            // Если движение достаточное, считаем, что это перетаскивание/изменение размера
-            if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
-                hasMoved = true;
+            const btn = selectedElement.deleteButton;
+            
+            if (btn && x >= btn.x && x <= btn.x + btn.size && y >= btn.y && y <= btn.y + btn.size) {
+                state.draggableItems.splice(selectedElementIndex, 1);
+                selectedElementIndex = -1;
+                saveStateToHistory();
+                renderCard();
+                showToast('Стикер удален');
+                e.preventDefault();
+                return;
             }
-
-
-            if (isResizing && (selectedElement.type === 'sticker' || selectedElement.type === 'text')) { 
-                if (selectedElement.type === 'sticker') {
-                     // Стикеры меняют ширину и сохраняют пропорции
-                    const newWidth = Math.max(40, elementStartWidth + deltaX);
-                    if (selectedElement.fixedAspect) {
-                         const img = cachedImages.get(selectedElement.src);
-                         const aspectRatio = img.width / img.height;
-                         selectedElement.width = newWidth;
-                         selectedElement.height = newWidth / aspectRatio;
-                    }
-                } else if (selectedElement.type === 'text') {
-                     // Изменяем масштаб шрифта
-                     const scaleDelta = (dragStartY - y) * 0.005; // Используем вертикальное движение для масштабирования
-                     let newScale = elementStartScale + scaleDelta;
-                     newScale = Math.max(0.2, Math.min(3.0, newScale)); // Ограничиваем масштаб
-                     selectedElement.scaleFactor = newScale;
-                     
-                     // Ширина (для переноса текста) остается прежней
-                }
-            } else if (isDragging) {
-                let newX = elementStartX + deltaX;
-                let newY = elementStartY + deltaY;
-
-                if (selectedElement.type === 'sticker') { // Только стикеры
-                    newX = Math.max(-selectedElement.width / 4, Math.min(canvas.width - selectedElement.width * 3 / 4, newX));
-                    newY = Math.max(-selectedElement.height / 4, Math.min(canvas.height - selectedElement.height * 3 / 4, newY));
-                    selectedElement.x = newX;
-                    selectedElement.y = newY;
-                } else if (selectedElement.type === 'text') {
-                    // Логика перемещения текста
-                    selectedElement.x = newX;
-                    selectedElement.y = newY;
-                }
-            }
-
+        }
+        
+        if (index === -1) {
+            selectedElementIndex = -1; 
             renderCard();
+            return;
+        }
+        
+        const selectedElement = state.draggableItems[index];
+        
+        if (selectedElement.type === 'logo') { 
+            selectedElementIndex = -1; 
+            renderCard();
+            return;
         }
 
-        function dragTouch(e) {
-            if (selectedElementIndex === -1 || (!isDragging && !isResizing) || !e.touches || e.touches.length !== 1) return;
+        // Перемещаем элемент наверх
+        if (index !== state.draggableItems.length - 1) {
+            state.draggableItems.splice(index, 1);
+            state.draggableItems.push(selectedElement);
+            selectedElementIndex = state.draggableItems.length - 1;
+        } else {
+            selectedElementIndex = index;
+        }
+        
+        dragStartX = x;
+        dragStartY = y;
+        elementStartX = selectedElement.x;
+        elementStartY = selectedElement.y;
+        elementStartWidth = selectedElement.width;
+        elementStartHeight = selectedElement.height;
+        elementStartScale = selectedElement.scaleFactor || 1.0;
+
+        hasMoved = false;
+
+        // Увеличиваем область для изменения размера на мобильных
+        const cornerSize = window.innerWidth <= 968 ? 50 : 30;
+        if (box && (selectedElement.type === 'sticker' || selectedElement.type === 'text') && 
+            x > box.x + box.width - cornerSize &&
+            y > box.y + box.height - cornerSize) {
+            isResizing = true;
+            isDragging = false;
+            canvas.style.cursor = 'nwse-resize';
+        } else {
+            isDragging = true;
+            isResizing = false;
+            canvas.style.cursor = 'move';
+        }
+        
+        e.preventDefault();
+        renderCard();
+    }
+
+    function startDragTouch(e) {
+        const { x, y } = getCanvasTouchPosition(e);
+        
+        let index = getElementAt(x, y);
+        const box = index !== -1 ? getBoundingBox(state.draggableItems[index]) : null;
+
+        // Проверка нажатия на кнопку удаления
+        if (selectedElementIndex !== -1 && state.draggableItems[selectedElementIndex].type === 'sticker') {
+            const selectedElement = state.draggableItems[selectedElementIndex];
+            const btn = selectedElement.deleteButton;
             
-            const touch = e.touches[0];
-            drag({ clientX: touch.clientX, clientY: touch.clientY, preventDefault: e.preventDefault.bind(e) });
-            e.preventDefault();
+            if (btn && x >= btn.x && x <= btn.x + btn.size && y >= btn.y && y <= btn.y + btn.size) {
+                state.draggableItems.splice(selectedElementIndex, 1);
+                selectedElementIndex = -1;
+                saveStateToHistory();
+                renderCard();
+                showToast('Стикер удален');
+                e.preventDefault();
+                return;
+            }
         }
 
-        function stopDrag(e) {
-            if (selectedElementIndex !== -1) {
-                const selectedElement = state.draggableItems[selectedElementIndex];
-                 
-                // *** ИСПРАВЛЕНИЕ ТРЕБОВАНИЯ 2: Фокусируем ввод текста БЕЗ СКРОЛЛА ***
-                if (!hasMoved && selectedElement.type === 'text') {
-                     // Выбираем текст в поле ввода, чтобы пользователь мог сразу начать печатать
-                     // preventScroll: true ГАРАНТИРУЕТ, что страница не "прыгнет"
-                     if (greetingTextInput.focus) {
-                        greetingTextInput.focus({ preventScroll: true }); 
-                        greetingTextInput.select(); 
-                     }
+        if (index === -1) {
+            selectedElementIndex = -1; 
+            renderCard();
+            return;
+        }
+
+        const selectedElement = state.draggableItems[index];
+        
+        if (selectedElement.type === 'logo') { 
+            selectedElementIndex = -1; 
+            renderCard();
+            return;
+        }
+
+        if (index !== state.draggableItems.length - 1) {
+            state.draggableItems.splice(index, 1);
+            state.draggableItems.push(selectedElement);
+            selectedElementIndex = state.draggableItems.length - 1;
+        } else {
+            selectedElementIndex = index;
+        }
+
+        dragStartX = x;
+        dragStartY = y;
+        elementStartX = selectedElement.x;
+        elementStartY = selectedElement.y;
+        elementStartWidth = selectedElement.width;
+        elementStartHeight = selectedElement.height;
+        elementStartScale = selectedElement.scaleFactor || 1.0;
+
+        hasMoved = false;
+
+        // Увеличенная область захвата для мобильных
+        const cornerSize = 60;
+        if (box && (selectedElement.type === 'sticker' || selectedElement.type === 'text') && 
+            x > box.x + box.width - cornerSize &&
+            y > box.y + box.height - cornerSize) {
+            isResizing = true;
+            isDragging = false;
+        } else {
+            isDragging = true;
+            isResizing = false;
+        }
+        
+        e.preventDefault();
+        renderCard();
+    }
+
+    function drag(e) {
+        if (selectedElementIndex === -1 || (!isDragging && !isResizing)) return;
+        
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+
+        const x = (e.clientX - rect.left) * scaleX;
+        const y = (e.clientY - rect.top) * scaleY;
+
+        const selectedElement = state.draggableItems[selectedElementIndex];
+        if (selectedElement.type === 'logo') return;
+
+        const deltaX = x - dragStartX;
+        const deltaY = y - dragStartY;
+
+        // Увеличиваем порог для регистрации движения
+        if (Math.abs(deltaX) > 8 || Math.abs(deltaY) > 8) {
+            hasMoved = true;
+        }
+
+        if (isResizing && (selectedElement.type === 'sticker' || selectedElement.type === 'text')) { 
+            if (selectedElement.type === 'sticker') {
+                const newWidth = Math.max(40, elementStartWidth + deltaX);
+                if (selectedElement.fixedAspect) {
+                     const img = cachedImages.get(selectedElement.src);
+                     const aspectRatio = img.width / img.height;
+                     selectedElement.width = newWidth;
+                     selectedElement.height = newWidth / aspectRatio;
                 }
+            } else if (selectedElement.type === 'text') {
+                // Используем более плавное масштабирование для текста
+                const scaleDelta = (dragStartY - y) * 0.003;
+                let newScale = elementStartScale + scaleDelta;
+                newScale = Math.max(0.3, Math.min(3.0, newScale));
+                selectedElement.scaleFactor = newScale;
+            }
+        } else if (isDragging) {
+            let newX = elementStartX + deltaX;
+            let newY = elementStartY + deltaY;
+
+            if (selectedElement.type === 'sticker') {
+                // Более мягкие границы для стикеров
+                const margin = 20;
+                newX = Math.max(-selectedElement.width + margin, 
+                         Math.min(canvas.width - margin, newX));
+                newY = Math.max(-selectedElement.height + margin, 
+                         Math.min(canvas.height - margin, newY));
+                selectedElement.x = newX;
+                selectedElement.y = newY;
+            } else if (selectedElement.type === 'text') {
+                selectedElement.x = newX;
+                selectedElement.y = newY;
+            }
+        }
+
+        renderCard();
+    }
+
+    function dragTouch(e) {
+        if (selectedElementIndex === -1 || (!isDragging && !isResizing) || !e.touches || e.touches.length !== 1) return;
+        
+        const touch = e.touches[0];
+        drag({ clientX: touch.clientX, clientY: touch.clientY, preventDefault: e.preventDefault.bind(e) });
+        e.preventDefault();
+    }
+
+    function stopDrag(e) {
+        if (selectedElementIndex !== -1 && hasMoved) {
+            saveStateToHistory();
+        }
+        
+        isDragging = false;
+        isResizing = false;
+        canvas.style.cursor = 'default';
+        hasMoved = false;
+    }
+
+    // --- ОТРИСОВКА ---
+
+    function getFontSize(item) {
+        const baseSize = Math.min(canvas.width, canvas.height);
+        let fixedSize;
+        switch(item.size) {
+            case 'small': fixedSize = baseSize * 0.04; break;
+            case 'large': fixedSize = baseSize * 0.07; break;
+            default: fixedSize = baseSize * 0.05;
+        }
+        return fixedSize * (item.scaleFactor || 1.0);
+    }
+
+    function renderCard() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // 1. Отрисовка Фона
+        if (state.selectedBackground) {
+            const bgImg = cachedImages.get(state.selectedBackground);
+            if (bgImg) {
+                const Cw = canvas.width;
+                const Ch = canvas.height;
+                const Iw = bgImg.width;
+                const Ih = bgImg.height;
                 
-                // ИСПРАВЛЕНИЕ ТРЕБОВАНИЯ 1: Обычный клик (hasMoved=false) на тексте или стикере 
-                // не должен считаться изменением размера (resizing), 
-                // это предотвращает случайное изменение размера текста на мобильных.
-                if (!hasMoved) {
-                    isResizing = false; // Отключаем, если это был просто клик
+                const scale = Math.max(Cw / Iw, Ch / Ih);
+                const scaledWidth = Iw * scale;
+                const scaledHeight = Ih * scale;
+                
+                const dx = 0; 
+                const dy = (Ch - scaledHeight) / 2;
+                
+                ctx.drawImage(bgImg, dx, dy, scaledWidth, scaledHeight);
+            } else {
+                ctx.fillStyle = '#f0f8ff'; 
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+        } else {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // 2. Отрисовка Элементов 
+        state.draggableItems.forEach((item, index) => {
+            if (item.type === 'sticker' || item.type === 'logo') {
+                const img = cachedImages.get(item.src);
+                if (img) {
+                    ctx.drawImage(img, item.x, item.y, item.width, item.height);
+                }
+            } else if (item.type === 'text') {
+                renderText(item);
+            }
+
+            // Рисуем рамку выбора
+            if (index === selectedElementIndex) {
+                drawSelectionBox(item);
+            }
+        });
+    }
+
+    function drawSelectionBox(item) {
+        if (item.type === 'logo') return;
+
+        ctx.strokeStyle = '#014d77';
+        ctx.lineWidth = 4;
+        ctx.setLineDash([10, 10]);
+        
+        const box = getBoundingBox(item);
+        if (!box) return;
+
+        ctx.strokeRect(box.x, box.y, box.width, box.height);
+        ctx.setLineDash([]); 
+
+        const handleSize = window.innerWidth <= 968 ? 50 : 40;
+        
+        // Ручка изменения размера
+        if (item.type === 'sticker' || item.type === 'text') {
+            ctx.fillStyle = '#014d77';
+            ctx.fillRect(box.x + box.width - handleSize / 2, 
+                       box.y + box.height - handleSize / 2, 
+                       handleSize, handleSize);
+            
+            // Иконка изменения размера
+            ctx.fillStyle = 'white';
+            ctx.font = `bold ${handleSize * 0.4}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('↔', 
+                       box.x + box.width - handleSize / 2 + handleSize / 2, 
+                       box.y + box.height - handleSize / 2 + handleSize / 2);
+        }
+
+        // Кнопка удаления (только для стикеров)
+        if (item.type === 'sticker') {
+            const deleteSize = handleSize;
+            item.deleteButton = {
+                x: box.x + box.width - deleteSize / 2,
+                y: box.y - deleteSize / 2,
+                size: deleteSize
+            };
+            
+            // Красный круг
+            ctx.beginPath();
+            ctx.arc(item.deleteButton.x + deleteSize / 2, 
+                   item.deleteButton.y + deleteSize / 2, 
+                   deleteSize / 2, 0, 2 * Math.PI);
+            ctx.fillStyle = '#ff4444';
+            ctx.fill();
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            // Белый крестик
+            ctx.fillStyle = 'white';
+            ctx.font = `bold ${deleteSize * 0.5}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('×', 
+                       item.deleteButton.x + deleteSize / 2, 
+                       item.deleteButton.y + deleteSize / 2);
+        }
+    }
+
+    function renderText(item) {
+        if (!item.content) return;
+
+        ctx.fillStyle = item.color;
+        
+        let fontFamily;
+        switch(item.font) {
+            case 'Marck Script': fontFamily = "'Marck Script', cursive"; break;
+            case 'Caveat': fontFamily = "'Caveat', cursive"; break;
+            case 'Bad Script': fontFamily = "'Bad Script', cursive"; break;
+            default: fontFamily = "'Marck Script', cursive";
+        }
+        
+        const fontSize = getFontSize(item);
+        const lineHeight = fontSize * 1.3;
+        const maxWidth = item.width; 
+        
+        ctx.textAlign = item.align;
+        ctx.textBaseline = 'middle';
+        
+        const lines = wrapText(ctx, item.content, maxWidth, fontSize, fontFamily);
+
+        item.height = lines.length * lineHeight;
+        
+        let xPos = item.x;
+        const offset = canvas.width * 0.01;
+        
+        if (item.align === 'left') xPos = item.x - item.width / 2 + offset; 
+        if (item.align === 'right') xPos = item.x + item.width / 2 - offset;
+
+        let startY = item.y - (item.height / 2) + (lineHeight / 2);
+
+        lines.forEach((line, index) => {
+            if (line.text.trim()) {
+                // Добавляем тень для лучшей читаемости
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+                ctx.shadowBlur = 2;
+                ctx.shadowOffsetX = 1;
+                ctx.shadowOffsetY = 1;
+                
+                ctx.font = `bold ${fontSize}px ${fontFamily}`;
+                ctx.fillText(line.text, xPos, startY + index * lineHeight);
+                
+                // Сбрасываем тень
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
+            }
+        });
+    }
+
+    function wrapText(context, text, maxWidth, fontSize, fontFamily) {
+        const paragraphs = text.split('\n');
+        const lines = [];
+        
+        context.font = `bold ${fontSize}px ${fontFamily}`;
+
+        for (const paragraph of paragraphs) {
+            const words = paragraph.split(' ');
+            let currentLine = '';
+
+            for (let i = 0; i < words.length; i++) {
+                const testLine = currentLine ? currentLine + ' ' + words[i] : words[i];
+                const metrics = context.measureText(testLine);
+                
+                if (metrics.width > maxWidth && currentLine !== '') {
+                    lines.push({ text: currentLine, fontSize: fontSize });
+                    currentLine = words[i];
+                } else {
+                    currentLine = testLine;
                 }
             }
-            
-            isDragging = false;
-            isResizing = false;
-            canvas.style.cursor = 'default';
-            hasMoved = false; // Сброс флага
+            if (currentLine) {
+                lines.push({ text: currentLine, fontSize: fontSize });
+            }
         }
+        return lines;
+    }
 
+    // --- ДЕЙСТВИЯ ---
 
-        // --- ОТРИСОВКА ---
+    function downloadCard() {
+        showLoading('Создание HD изображения...');
+        
+        // Даем время для отображения индикатора загрузки
+        setTimeout(() => {
+            try {
+                const scaleFactor = 3;
+                const hdCanvas = document.createElement('canvas');
+                hdCanvas.width = canvas.width * scaleFactor;
+                hdCanvas.height = canvas.height * scaleFactor;
+                const hdCtx = hdCanvas.getContext('2d');
+                
+                hdCtx.scale(scaleFactor, scaleFactor);
+                renderCardHD(hdCtx, hdCanvas.width / scaleFactor, hdCanvas.height / scaleFactor);
 
-        // Обновленная функция для получения размера шрифта с учетом масштаба
-        function getFontSize(item) {
-            // Пересчитываем размер шрифта относительно нового HD-разрешения
-            const baseSize = Math.min(canvas.width, canvas.height); 
-            let fixedSize;
-            switch(item.size) { // Используем item.size для базового размера
+                const dataURL = hdCanvas.toDataURL('image/png', 1.0);
+                const link = document.createElement('a');
+                link.href = dataURL;
+                link.download = 'новогодняя-открытка-' + new Date().getTime() + '.png';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                showToast('Открытка сохранена!', 2000);
+            } catch (error) {
+                console.error('Ошибка при сохранении:', error);
+                showToast('Ошибка при сохранении', 3000);
+            } finally {
+                hideLoading();
+            }
+        }, 100);
+    }
+
+    function renderCardHD(hdCtx, hdWidth, hdHeight) {
+        // Фон
+        if (state.selectedBackground) {
+            const bgImg = cachedImages.get(state.selectedBackground);
+            if (bgImg) {
+                const Cw = hdWidth;
+                const Ch = hdHeight;
+                const Iw = bgImg.width;
+                const Ih = bgImg.height;
+
+                const scale = Math.max(Cw / Iw, Ch / Ih);
+                const scaledWidth = Iw * scale;
+                const scaledHeight = Ih * scale;
+                
+                const dx = 0; 
+                const dy = (Ch - scaledHeight) / 2;
+                
+                hdCtx.drawImage(bgImg, dx, dy, scaledWidth, scaledHeight);
+            } else {
+                hdCtx.fillStyle = '#f0f8ff';
+                hdCtx.fillRect(0, 0, hdWidth, hdHeight);
+            }
+        }
+        
+        // Элементы
+        state.draggableItems.forEach(item => {
+             if (item.type === 'sticker' || item.type === 'logo') {
+                const img = cachedImages.get(item.src);
+                if (img) {
+                    hdCtx.drawImage(img, item.x, item.y, item.width, item.height);
+                }
+            } else if (item.type === 'text') {
+                renderTextHD(hdCtx, item, hdWidth, hdHeight);
+            }
+        });
+    }
+    
+    function renderTextHD(hdCtx, item, hdWidth, hdHeight) {
+         if (!item.content) return;
+
+        hdCtx.fillStyle = item.color;
+        
+        let fontFamily;
+        switch(item.font) {
+            case 'Marck Script': fontFamily = "'Marck Script', cursive"; break;
+            case 'Caveat': fontFamily = "'Caveat', cursive"; break;
+            case 'Bad Script': fontFamily = "'Bad Script', cursive"; break;
+            default: fontFamily = "'Marck Script', cursive";
+        }
+        
+        function getFontSizeHD(item) {
+             const baseSize = Math.min(hdWidth, hdHeight);
+             let fixedSize;
+             switch(item.size) {
                 case 'small': fixedSize = baseSize * 0.04; break;
                 case 'large': fixedSize = baseSize * 0.07; break;
                 default: fixedSize = baseSize * 0.05;
-            }
-            // Применяем scaleFactor
-            return fixedSize * (item.scaleFactor || 1.0);
-        }
-
-
-        function renderCard() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // 1. Отрисовка Фона (логика Cover с левым выравниванием)
-            if (state.selectedBackground) {
-                const bgImg = cachedImages.get(state.selectedBackground);
-                if (bgImg) {
-                    const Cw = canvas.width;
-                    const Ch = canvas.height;
-                    const Iw = bgImg.width;
-                    const Ih = bgImg.height;
-                    
-                    const scale = Math.max(Cw / Iw, Ch / Ih); // Масштаб для покрытия
-                    
-                    const scaledWidth = Iw * scale;
-                    const scaledHeight = Ih * scale;
-                    
-                    const dx = 0; 
-                    const dy = (Ch - scaledHeight) / 2;
-                    
-                    ctx.drawImage(bgImg, dx, dy, scaledWidth, scaledHeight);
-                } else {
-                    ctx.fillStyle = '#f0f8ff'; 
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                }
-            } else {
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-            }
-
-            // 2. Отрисовка Элементов 
-            state.draggableItems.forEach((item, index) => {
-                if (item.type === 'sticker' || item.type === 'logo') {
-                    const img = cachedImages.get(item.src);
-                    if (img) {
-                        ctx.drawImage(img, item.x, item.y, item.width, item.height);
-                    }
-                } else if (item.type === 'text') {
-                    renderText(item);
-                }
-
-                // Рисуем рамку выбора и контрольные точки только для выбранного элемента
-                if (index === selectedElementIndex) {
-                    drawSelectionBox(item);
-                }
-            });
-        }
-
-        function drawSelectionBox(item) {
-            // ЛОГОТИП НИКОГДА НЕ ВЫБИРАЕТСЯ И НИКОГДА НЕ РИСУЕТ РАМКУ
-            if (item.type === 'logo') return;
-
-            ctx.strokeStyle = '#014d77';
-            ctx.lineWidth = 4; // Увеличена толщина рамки для HD
-            ctx.setLineDash([10, 10]); // Увеличен пунктир
-            
-            const box = getBoundingBox(item);
-            if (!box) return;
-
-            ctx.strokeRect(box.x, box.y, box.width, box.height);
-            ctx.setLineDash([]); 
-
-            const handleSize = 40; 
-            // Отрисовка ручки изменения размера для стикеров И текста.
-            if (item.type === 'sticker' || item.type === 'text') {
-                // Ручка изменения размера (правый нижний угол)
-                ctx.fillStyle = '#014d77';
-                ctx.fillRect(box.x + box.width - handleSize / 2, box.y + box.height - handleSize / 2, handleSize, handleSize);
-            }
-
-            // КНОПКА УДАЛЕНИЯ (только для стикеров)
-            if (item.type === 'sticker') {
-                const deleteSize = 40; 
-                item.deleteButton = {
-                    x: box.x + box.width - deleteSize / 2,
-                    y: box.y - deleteSize / 2,
-                    size: deleteSize
-                };
-                
-                ctx.beginPath();
-                ctx.arc(item.deleteButton.x + deleteSize / 2, item.deleteButton.y + deleteSize / 2, deleteSize / 2, 0, 2 * Math.PI);
-                ctx.fillStyle = 'red';
-                ctx.fill();
-                ctx.strokeStyle = 'white';
-                ctx.lineWidth = 4;
-                ctx.stroke();
-
-                // Рисуем 'X'
-                ctx.fillStyle = 'white';
-                ctx.font = `bold ${deleteSize * 0.6}px sans-serif`;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText('X', item.deleteButton.x + deleteSize / 2, item.deleteButton.y + deleteSize / 2 + 2);
-            }
-        }
-
-        function renderText(item) {
-            if (!item.content) return;
-
-            ctx.fillStyle = item.color;
-            
-            let fontFamily;
-            switch(item.font) {
-                case 'Marck Script': fontFamily = "'Marck Script', cursive"; break;
-                case 'Caveat': fontFamily = "'Caveat', cursive"; break;
-                case 'Bad Script': fontFamily = "'Bad Script', cursive"; break;
-                default: fontFamily = "'Marck Script', cursive";
-            }
-            
-            const fontSize = getFontSize(item); // Используем функцию с учетом масштаба
-            const lineHeight = fontSize * 1.3;
-            const maxWidth = item.width; 
-            
-            ctx.textAlign = item.align;
-            ctx.textBaseline = 'middle';
-            
-            const lines = wrapText(ctx, item.content, maxWidth, fontSize, fontFamily);
-
-            item.height = lines.length * lineHeight; // Обновляем высоту элемента
-            
-            let xPos = item.x; 
-            // Это смещение предназначено для визуального отступа, чтобы текст не прилипал к краю рамки
-            const offset = canvas.width * 0.01; 
-            
-            if (item.align === 'left') xPos = item.x - item.width / 2 + offset; 
-            if (item.align === 'right') xPos = item.x + item.width / 2 - offset;
-
-            let startY = item.y - (item.height / 2) + (lineHeight / 2);
-
-            lines.forEach((line, index) => {
-                if (line.text.trim()) {
-                    // Используем жирный шрифт для лучшей читаемости на HD
-                    ctx.font = `bold ${fontSize}px ${fontFamily}`;
-                    ctx.fillText(line.text, xPos, startY + index * lineHeight);
-                }
-            });
-        }
-
-        // Вспомогательная функция для переноса текста
-        function wrapText(context, text, maxWidth, fontSize, fontFamily) {
-            const paragraphs = text.split('\n');
-            const lines = [];
-            
-            context.font = `bold ${fontSize}px ${fontFamily}`;
-
-            for (const paragraph of paragraphs) {
-                const words = paragraph.split(' ');
-                let currentLine = '';
-
-                for (let i = 0; i < words.length; i++) {
-                    const testLine = currentLine ? currentLine + ' ' + words[i] : words[i];
-                    const metrics = context.measureText(testLine);
-                    
-                    if (metrics.width > maxWidth && currentLine !== '') {
-                        lines.push({ text: currentLine, fontSize: fontSize });
-                        currentLine = words[i];
-                    } else {
-                        currentLine = testLine;
-                    }
-                }
-                if (currentLine) {
-                    lines.push({ text: currentLine, fontSize: fontSize });
-                }
-            }
-            return lines;
-        }
-
-        // --- ДЕЙСТВИЯ ---
-
-        function downloadCard() {
-            // Для скачивания используем еще большее масштабирование для супер HD (x3 от HD)
-            const scaleFactor = 3; 
-            const hdCanvas = document.createElement('canvas');
-            hdCanvas.width = canvas.width * scaleFactor;
-            hdCanvas.height = canvas.height * scaleFactor;
-            const hdCtx = hdCanvas.getContext('2d');
-            
-            hdCtx.scale(scaleFactor, scaleFactor);
-            
-            renderCardHD(hdCtx, hdCanvas.width / scaleFactor, hdCanvas.height / scaleFactor);
-
-            const dataURL = hdCanvas.toDataURL('image/png');
-            const link = document.createElement('a');
-            link.href = dataURL;
-            link.download = 'novogodnyaya-otkrytka.png';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        function renderCardHD(hdCtx, hdWidth, hdHeight) {
-            // 1. Фон
-            if (state.selectedBackground) {
-                const bgImg = cachedImages.get(state.selectedBackground);
-                if (bgImg) {
-                    const Cw = hdWidth;
-                    const Ch = hdHeight;
-                    const Iw = bgImg.width;
-                    const Ih = bgImg.height;
-
-                    // Логика Cover с левым выравниванием для HD
-                    const scale = Math.max(Cw / Iw, Ch / Ih);
-                    
-                    const scaledWidth = Iw * scale;
-                    const scaledHeight = Ih * scale;
-                    
-                    const dx = 0; 
-                    const dy = (Ch - scaledHeight) / 2;
-                    
-                    hdCtx.drawImage(bgImg, dx, dy, scaledWidth, scaledHeight);
-                } else {
-                    hdCtx.fillStyle = '#f0f8ff';
-                    hdCtx.fillRect(0, 0, hdWidth, hdHeight);
-                }
-            }
-            
-            // 2. Элементы
-            state.draggableItems.forEach(item => {
-                 if (item.type === 'sticker' || item.type === 'logo') {
-                    const img = cachedImages.get(item.src);
-                    if (img) {
-                        hdCtx.drawImage(img, item.x, item.y, item.width, item.height);
-                    }
-                } else if (item.type === 'text') {
-                    renderTextHD(hdCtx, item, hdWidth, hdHeight);
-                }
-            });
+             }
+             return fixedSize * (item.scaleFactor || 1.0);
         }
         
-        function renderTextHD(hdCtx, item, hdWidth, hdHeight) {
-             if (!item.content) return;
+        const fontSize = getFontSizeHD(item);
+        const lineHeight = fontSize * 1.3;
+        const maxWidth = item.width; 
+        
+        hdCtx.textAlign = item.align;
+        hdCtx.textBaseline = 'middle';
+        
+        const lines = wrapText(hdCtx, item.content, maxWidth, fontSize, fontFamily);
+        
+        const tempCtx = document.createElement('canvas').getContext('2d');
+        const tempLines = wrapText(tempCtx, item.content, maxWidth, fontSize, fontFamily);
+        item.height = tempLines.length * lineHeight;
+        
+        let xPos = item.x; 
+        const offset = hdWidth * 0.01;
+        
+        if (item.align === 'left') xPos = item.x - item.width / 2 + offset; 
+        if (item.align === 'right') xPos = item.x + item.width / 2 - offset;
 
-            hdCtx.fillStyle = item.color;
-            
-            let fontFamily;
-            switch(item.font) {
-                case 'Marck Script': fontFamily = "'Marck Script', cursive"; break;
-                case 'Caveat': fontFamily = "'Caveat', cursive"; break;
-                case 'Bad Script': fontFamily = "'Bad Script', cursive"; break;
-                default: fontFamily = "'Marck Script', cursive";
+        let startY = item.y - (item.height / 2) + (lineHeight / 2);
+
+        lines.forEach((line, index) => {
+            if (line.text.trim()) {
+                hdCtx.font = `bold ${fontSize}px ${fontFamily}`;
+                hdCtx.fillText(line.text, xPos, startY + index * lineHeight);
             }
-            
-            function getFontSizeHD(item) {
-                 // Шкала должна быть такой же, как в обычной renderText
-                 const baseSize = Math.min(hdWidth, hdHeight); 
-                 let fixedSize;
-                 switch(item.size) { // Используем item.size для базового размера
-                    case 'small': fixedSize = baseSize * 0.04; break;
-                    case 'large': fixedSize = baseSize * 0.07; break;
-                    default: fixedSize = baseSize * 0.05;
-                 }
-                 return fixedSize * (item.scaleFactor || 1.0); // Применяем scaleFactor
-            }
-            
-            const fontSize = getFontSizeHD(item);
-            const lineHeight = fontSize * 1.3;
-            const maxWidth = item.width; 
-            
-            hdCtx.textAlign = item.align;
-            hdCtx.textBaseline = 'middle';
-            
-            const lines = wrapText(hdCtx, item.content, maxWidth, fontSize, fontFamily);
-            
-            // Обновляем item.height в масштабе HD
-            const tempCtx = document.createElement('canvas').getContext('2d');
-            const tempLines = wrapText(tempCtx, item.content, maxWidth, fontSize, fontFamily);
-            item.height = tempLines.length * lineHeight;
-            
-            let xPos = item.x; 
-            const offset = hdWidth * 0.01;
-            
-            if (item.align === 'left') xPos = item.x - item.width / 2 + offset; 
-            if (item.align === 'right') xPos = item.x + item.width / 2 - offset;
+        });
+    }
 
-            let startY = item.y - (item.height / 2) + (lineHeight / 2);
-
-            lines.forEach((line, index) => {
-                if (line.text.trim()) {
-                    hdCtx.font = `bold ${fontSize}px ${fontFamily}`;
-                    hdCtx.fillText(line.text, xPos, startY + index * lineHeight);
-                }
-            });
+    function clearCard() {
+        if (!confirm('Очистить открытку? Все стикеры будут удалены.')) {
+            return;
+        }
+        
+        // Оставляем только текст и логотип
+        state.draggableItems = state.draggableItems.filter(item => item.type === 'text' || item.type === 'logo');
+        state.greetingText = 'С Новым годом!';
+        greetingTextInput.value = state.greetingText;
+        selectedElementIndex = -1;
+        
+        const textItem = state.draggableItems.find(item => item.type === 'text');
+        if (textItem) {
+             textItem.content = state.greetingText;
+             textItem.scaleFactor = 1.0;
+             const { width: nativeWidth, height: nativeHeight } = config.orientations[state.orientation];
+             textItem.x = nativeWidth / 2;
+             textItem.y = nativeHeight * 0.45;
+             textItem.width = nativeWidth * 0.8;
         }
 
+        saveStateToHistory();
+        renderCard();
+        showToast('Открытка очищена', 2000);
+    }
 
-        function clearCard() {
-            // Оставляем только текст и логотип
-            state.draggableItems = state.draggableItems.filter(item => item.type === 'text' || item.type === 'logo');
-            state.greetingText = 'С Новым годом!';
-            greetingTextInput.value = state.greetingText;
-            selectedElementIndex = -1;
-            
-            const textItem = state.draggableItems.find(item => item.type === 'text');
-            if (textItem) {
-                 textItem.content = state.greetingText;
-                 // Возвращаем масштаб и размер блока к дефолтным
-                 textItem.scaleFactor = 1.0; 
-                 const { width: nativeWidth, height: nativeHeight } = config.orientations[state.orientation];
-                 textItem.x = nativeWidth / 2;
-                 textItem.y = nativeHeight * 0.45;
-                 textItem.width = nativeWidth * 0.8;
-            }
+    // --- МОБИЛЬНЫЕ ФУНКЦИИ ---
 
-            renderCard();
+    function toggleControls() {
+        controlsPanel.classList.toggle('collapsed');
+        const isCollapsed = controlsPanel.classList.contains('collapsed');
+        showToast(isCollapsed ? 'Панель управления скрыта' : 'Панель управления показана', 1500);
+    }
+
+    function scrollToPreview() {
+        previewSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        showToast('Переход к открытке', 1000);
+    }
+
+    // Инициализация при загрузке страницы
+    window.addEventListener('DOMContentLoaded', () => {
+        // Уже вызывается через onload в body
+    });
+
+    // Предотвращаем масштабирование при двойном тапе на канвас
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function(event) {
+        const now = Date.now();
+        if (now - lastTouchEnd <= 300) {
+            event.preventDefault();
         }
-    </script>
-</body>
+        lastTouchEnd = now;
+    }, false);
+
+</script>
+</body> 
 </html>
